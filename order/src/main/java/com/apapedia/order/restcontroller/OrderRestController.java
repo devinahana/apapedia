@@ -18,13 +18,13 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping(value = "/api/order/")
+@RequestMapping(value = "/api/order")
 public class OrderRestController {
     OrderRestService orderService;
 
 
     // POST : Create new order
-    @PostMapping("create")
+    @PostMapping("")
     public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequestDTO createOrderRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
@@ -68,16 +68,14 @@ public class OrderRestController {
     }
 
     // GET Order by Customer Id
-    @GetMapping("customer/{customerId}")
+    @GetMapping("/customer/{customerId}")
     public ResponseEntity<?> getOrderByCustomerId(@PathVariable("customerId") String customerId) {
         try {
             UUID customerIdUUID = UUID.fromString(customerId);
 
             List<Order> listOrders = orderService.getOrderByCustomerId(customerIdUUID);
             if (listOrders == null || listOrders.isEmpty()) {
-                return ResponseEntity
-                        .status(HttpStatus.NOT_FOUND)
-                        .body(new BaseResponse<>(true, "Customer does not have any orders"));
+                return ResponseEntity.ok(new BaseResponse<>(true, "Customer does not have any orders"));
             }
 
             return ResponseEntity.ok(new BaseResponse<>(true, "Order fetched successfully", listOrders));
@@ -93,16 +91,14 @@ public class OrderRestController {
     }
 
     // GET Order by Seller Id
-    @GetMapping("seller/{sellerId}")
+    @GetMapping("/seller/{sellerId}")
     public ResponseEntity<?> getOrderBySellerId(@PathVariable("sellerId") String sellerId) {
         try {
             UUID sellerIdUUID = UUID.fromString(sellerId);
 
             List<Order> listOrders = orderService.getOrderBySellerId(sellerIdUUID);
             if (listOrders == null || listOrders.isEmpty()) {
-                return ResponseEntity
-                        .status(HttpStatus.NOT_FOUND)
-                        .body(new BaseResponse<>(true, "Seller does not have any orders"));
+                return ResponseEntity.ok(new BaseResponse<>(true, "Seller does not have any orders"));
             }
 
             return ResponseEntity.ok(new BaseResponse<>(true, "Order fetched successfully", listOrders));
@@ -118,16 +114,14 @@ public class OrderRestController {
     }
 
     // GET sales per day for this month
-    @GetMapping("monthly-sales/{sellerId}")
+    @GetMapping("/monthly-sales/{sellerId}")
     public ResponseEntity<?> getSalesPerDay(@PathVariable("sellerId") String sellerId) {
         try {
             UUID sellerIdUUID = UUID.fromString(sellerId);
 
             Map<Integer, Integer> salesPerDay = orderService.getSalesPerDay(sellerIdUUID);
             if (salesPerDay == null) {
-                return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body(new BaseResponse<>(true, "No items have been sold this month"));
+                return ResponseEntity.ok(new BaseResponse<>(true, "No items have been sold this month"));
             }
 
             return ResponseEntity.ok(new BaseResponse<>(true, "This month sales fetched successfully", salesPerDay));
