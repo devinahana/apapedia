@@ -1,5 +1,6 @@
 package com.apapedia.catalog.model;
 
+import com.apapedia.catalog.model.enumerator.CategoryName;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -25,13 +26,11 @@ public class Category {
     private UUID id = UUID.randomUUID();
 
     @NotNull
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private CategoryName name;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonBackReference
     private List<Catalog> listCatalog = new ArrayList<>();
 
-    public Category(String name) {
-        this.name = name;
-    }
 }

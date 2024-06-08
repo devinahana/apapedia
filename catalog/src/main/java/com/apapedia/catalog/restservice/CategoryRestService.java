@@ -6,12 +6,10 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CategoryRestService {
-    Category saveCategory(Category category);
+    void createCategory();
 
     Category findById(UUID id);
 
     List<Category> getAllCategory();
-
-    boolean isCategoryTableEmpty();
 
 }

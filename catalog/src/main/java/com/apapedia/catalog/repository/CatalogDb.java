@@ -8,10 +8,15 @@ import java.util.UUID;
 import java.util.List;
 
 public interface CatalogDb extends JpaRepository<Catalog, UUID> {
-    List<Catalog> findBySeller(UUID sellerId);
+
+    @Query("SELECT c FROM Catalog c ORDER BY LOWER(c.productName) ASC")
+    List<Catalog> findAllByOrderByProductNameAscIgnoreCase();
 
     @Query("SELECT c FROM Catalog c WHERE c.seller = :sellerId ORDER BY LOWER(c.productName) ASC")
-    List<Catalog> findBySellerOrderByProductNameAscIgnoreCase(UUID sellerId);
+    List<Catalog> findAllBySellerOrderByProductNameAscIgnoreCase(UUID sellerId);
+
+//    @Query("SELECT c FROM Catalog c WHERE c.seller = :sellerId ORDER BY LOWER(c.productName) ASC")
+//    List<Catalog> findBySellerOrderByProductNameAscIgnoreCase(UUID sellerId);
 
     @Query("SELECT c FROM Catalog c WHERE c.seller = :sellerId ORDER BY LOWER(c.productName) DESC")
     List<Catalog> findBySellerOrderByProductNameDescIgnoreCase(UUID sellerId);

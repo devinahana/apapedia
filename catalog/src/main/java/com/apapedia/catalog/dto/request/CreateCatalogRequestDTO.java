@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.UUID;
 
@@ -22,7 +23,7 @@ public class CreateCatalogRequestDTO {
     private String productName;
 
     @NotNull(message = "Product price cannot be empty")
-    private BigInteger price;
+    private BigDecimal price;
 
     @NotNull(message = "Product description cannot be empty")
     private String productDescription;
