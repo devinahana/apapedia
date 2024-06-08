@@ -7,8 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -21,17 +20,13 @@ public class CartItem {
     private UUID id = UUID.randomUUID();
 
     @NotNull
-    @Column(name = "product_id", nullable = false)
-    private UUID productId;
-
-    @NotNull
-    @Column(name = "quantity", nullable = false)
     private int quantity;
 
     @NotNull
-    @Column(name = "product_price", nullable = false)
-    private BigInteger productPrice;
+    private UUID productId;
 
+    @NotNull
+    private BigDecimal productPrice = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cart_id", referencedColumnName = "id")

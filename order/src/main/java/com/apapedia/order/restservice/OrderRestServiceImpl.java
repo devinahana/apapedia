@@ -1,11 +1,13 @@
 package com.apapedia.order.restservice;
 
+import com.apapedia.order.dto.OrderMapper;
 import com.apapedia.order.dto.request.ChangeOrderStatusRequestDTO;
+import com.apapedia.order.dto.request.CreateOrderRequestDTO;
 import com.apapedia.order.model.Order;
+import com.apapedia.order.model.OrderItem;
 import com.apapedia.order.repository.OrderDb;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -13,16 +15,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-
 @Service
 @AllArgsConstructor
 public class OrderRestServiceImpl implements OrderRestService {
 
     OrderDb orderDb;
 
-    @Override
-    public Order saveOrder(Order order) {
+    OrderMapper orderMapper;
+
+    private Order saveOrder(Order order) {
         return orderDb.save(order);
+    }
+
+    @Override
+    public Order createOrder(CreateOrderRequestDTO createOrderRequestDTO) {
+        Order order = orderMapper.createOrderRequestDTOToOrder(createOrderRequestDTO);
+        return this.saveOrder(order);
     }
 
     @Override
@@ -30,9 +38,10 @@ public class OrderRestServiceImpl implements OrderRestService {
         Order order = orderDb.findById(changeOrderStatusRequestDTO.getId()).orElse(null);
         if (order != null) {
             order.setStatus(changeOrderStatusRequestDTO.getStatus());
-            order = this.saveOrder(order);
+            return this.saveOrder(order);
+        } else {
+            throw new IllegalArgumentException("Order ID not found");
         }
-        return order;
     }
 
     @Override
@@ -51,14 +60,14 @@ public class OrderRestServiceImpl implements OrderRestService {
         if (sellerOrders.isEmpty()) {
             return null;
         }
-        LocalDate currentDate = LocalDate.now();
-        int today = currentDate.getDayOfMonth();
-        int currentMonth = currentDate.getMonthValue();
-        int currentYear = currentDate.getYear();
+        LocalDate today = LocalDate.now();
+        int currentDate = today.getDayOfMonth();
+        int currentMonth = today.getMonthValue();
+        int currentYear = today.getYear();
 
         // Create a map to store the count for each day
         Map<Integer, Integer> itemCountPerDay = new HashMap<>();
-        for (int i = 1; i <= today; i++) {
+        for (int i = 1; i <= currentDate; i++) {
             itemCountPerDay.put(i, 0);
         }
         // Iterate over each order
@@ -68,9 +77,11 @@ public class OrderRestServiceImpl implements OrderRestService {
             int day = localDate.getDayOfMonth();
             int month = localDate.getMonthValue();
             int year = localDate.getYear();
-            if (year == currentYear && month == currentMonth && day <= today) {
-                // Count the number of OrderItems for each day
-                int itemCount = order.getListOrderItem().size();
+            if (year == currentYear && month == currentMonth && day <= currentDate) {
+                int itemCount = 0;
+                for (OrderItem orderItem : order.getListOrderItem()) {
+                    itemCount += orderItem.getQuantity();
+                }
 
                 // Update the count in the map
                 itemCountPerDay.merge(day, itemCount, Integer::sum);

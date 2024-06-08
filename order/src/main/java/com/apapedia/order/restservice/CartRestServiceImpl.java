@@ -1,14 +1,18 @@
 package com.apapedia.order.restservice;
 
+import com.apapedia.order.dto.CartItemMapper;
+import com.apapedia.order.dto.CartMapper;
+import com.apapedia.order.dto.request.CreateCartItemRequestDTO;
+import com.apapedia.order.dto.request.CreateCartRequestDTO;
+import com.apapedia.order.dto.request.DeleteCartItemRequestDTO;
+import com.apapedia.order.dto.request.UpdateCartItemRequestDTO;
 import com.apapedia.order.model.Cart;
 import com.apapedia.order.model.CartItem;
 import com.apapedia.order.repository.CartDb;
 import com.apapedia.order.repository.CartItemDb;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.math.BigInteger;
-import java.util.NoSuchElementException;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -16,60 +20,92 @@ import java.util.UUID;
 public class CartRestServiceImpl implements CartRestService {
 
     CartDb cartDb;
-
     CartItemDb cartItemDb;
+    CartMapper cartMapper;
+    CartItemMapper cartItemMapper;
 
-    @Override
-    public Cart saveCart(Cart cart) {
+    private Cart saveCart(Cart cart) {
         return cartDb.save(cart);
     }
 
+    private CartItem saveCartItem(CartItem cartItem) {
+        return cartItemDb.save(cartItem);
+    }
 
-    @Override
-    public Cart findCartById(UUID cartId) {
+    private Cart findCartById(UUID cartId) {
         return cartDb.findById(cartId).orElse(null);
     }
 
-    @Override
-    public CartItem findCartItemById(UUID cartItemId) {
+    private CartItem findCartItemById(UUID cartItemId) {
         return cartItemDb.findById(cartItemId).orElse(null);
+    }
+    private void deleteCartItem(CartItem cartItem) {
+        cartItemDb.delete(cartItem);
     }
 
     @Override
-    public Cart updateCartItem(UUID cartId, CartItem cartItem) {
+    public Cart createCart(CreateCartRequestDTO createCartRequestDTO) {
+        Cart cart = cartMapper.createCartRequestDTOToCart(createCartRequestDTO);
+        return this.saveCart(cart);
+    }
+
+    @Override
+    public Cart addCartItem(CreateCartItemRequestDTO createCartItemRequestDTO) {
+        UUID cartId = createCartItemRequestDTO.getCartId();
         Cart cart = this.findCartById(cartId);
-        if (cart != null) {
-            BigInteger totalPriceItem = cartItem.getProductPrice().multiply(
-                    BigInteger.valueOf(cartItem.getQuantity())
-            );
-
-            // Cart item already exists before
-            for (CartItem existingCartItem : cart.getListCartItem()) {
-                if (existingCartItem.getProductId().equals(cartItem.getProductId())) {
-                    BigInteger totalPriceExistingItem = existingCartItem.getProductPrice().multiply(
-                            BigInteger.valueOf(existingCartItem.getQuantity())
-                    );
-                    existingCartItem.setQuantity(cartItem.getQuantity());
-                    cart.setTotalPrice(
-                            cart.getTotalPrice().subtract(totalPriceExistingItem).add(totalPriceItem)
-                    );
-                    cartItemDb.save(existingCartItem);
-                    cart = this.saveCart(cart);
-                    return cart;
-                }
-            }
-
-            // Cart item have not existed before
-            cartItem.setCart(cart);
-            cartItemDb.save(cartItem);
-            cart.getListCartItem().add(cartItem);
-            cart.setTotalPrice(
-                    cart.getTotalPrice().add(
-                            totalPriceItem
-                    ));
-            cart = this.saveCart(cart);
+        if (cart == null) {
+            throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
         }
-        return cart;
+
+        CartItem cartItem = cartItemMapper.createCartItemRequestDTOToCartItem(createCartItemRequestDTO);
+        BigDecimal totalPriceItem = cartItem.getProductPrice().multiply(
+                BigDecimal.valueOf(cartItem.getQuantity())
+        );
+
+        cartItem.setCart(cart);
+        this.saveCartItem(cartItem);
+
+        cart.getListCartItem().add(cartItem);
+        cart.setTotalPrice(
+                cart.getTotalPrice().add(
+                        totalPriceItem
+                ));
+        return this.saveCart(cart);
+    }
+
+    @Override
+    public Cart updateCardItem(UpdateCartItemRequestDTO updateCartItemRequestDTO) {
+        UUID cartId = updateCartItemRequestDTO.getCartId();
+        Cart cart = this.findCartById(cartId);
+        if (cart == null) {
+            throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
+        }
+
+        UUID cartItemId = updateCartItemRequestDTO.getCartItemId();
+        CartItem cartItem = this.findCartItemById(cartItemId);
+        if (cartItem == null || ! cart.getListCartItem().contains(cartItem)) {
+            throw new IllegalArgumentException("Cart Item with ID " + cartItemId + " not found.");
+        }
+
+        BigDecimal totalPriceItem = cartItem.getProductPrice().multiply(
+                BigDecimal.valueOf(cartItem.getQuantity())
+        );
+
+        BigDecimal updatedTotalPriceItem = cartItem.getProductPrice().multiply(
+                BigDecimal.valueOf(updateCartItemRequestDTO.getQuantity())
+        );
+
+        cartItem.setQuantity(updateCartItemRequestDTO.getQuantity());
+        this.saveCartItem(cartItem);
+
+        cart.setTotalPrice(
+                cart.getTotalPrice().subtract(
+                        totalPriceItem
+                ).add(
+                        updatedTotalPriceItem
+                )
+        );
+        return this.saveCart(cart);
     }
 
     @Override
@@ -78,22 +114,27 @@ public class CartRestServiceImpl implements CartRestService {
     }
 
     @Override
-    public void deleteCartItem(UUID cartId, UUID cartItemId) {
-        CartItem cartItem = this.findCartItemById(cartItemId);
+    public Cart deleteCartItem(DeleteCartItemRequestDTO deleteCartItemRequestDTO) {
+        UUID cartId = deleteCartItemRequestDTO.getCartId();
         Cart cart = this.findCartById(cartId);
         if (cart == null) {
-            throw new NoSuchElementException("Cart with ID " + cartId + " not found.");
-        }
-        if (cartItem == null || ! cart.getListCartItem().contains(cartItem)) {
-            throw new NoSuchElementException("Cart Item with ID " + cartItemId + " not found.");
+            throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
         }
 
-        BigInteger totalPriceDeletedItem = cartItem.getProductPrice().multiply(
-                BigInteger.valueOf(cartItem.getQuantity())
+        UUID cartItemId = deleteCartItemRequestDTO.getCartItemId();
+        CartItem cartItem = this.findCartItemById(cartItemId);
+        if (cartItem == null || ! cart.getListCartItem().contains(cartItem)) {
+            throw new IllegalArgumentException("Cart Item with ID " + cartItemId + " not found.");
+        }
+
+        BigDecimal totalPriceDeletedItem = cartItem.getProductPrice().multiply(
+                BigDecimal.valueOf(cartItem.getQuantity())
         );
-        cartItemDb.deleteById(cartItemId);
+
+        cart.getListCartItem().remove(cartItem);
+        this.deleteCartItem(cartItem);
         cart.setTotalPrice(cart.getTotalPrice().subtract(totalPriceDeletedItem));
-        this.saveCart(cart);
+        return this.saveCart(cart);
     }
 
 }

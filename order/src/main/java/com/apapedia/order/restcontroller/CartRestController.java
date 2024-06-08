@@ -1,13 +1,11 @@
 package com.apapedia.order.restcontroller;
 
-import com.apapedia.order.dto.CartItemMapper;
-import com.apapedia.order.dto.CartMapper;
 import com.apapedia.order.dto.request.CreateCartItemRequestDTO;
 import com.apapedia.order.dto.request.CreateCartRequestDTO;
 import com.apapedia.order.dto.request.DeleteCartItemRequestDTO;
-import com.apapedia.order.dto.response.DeleteCartItemResponseDTO;
+import com.apapedia.order.dto.request.UpdateCartItemRequestDTO;
+import com.apapedia.order.dto.response.BaseResponse;
 import com.apapedia.order.model.Cart;
-import com.apapedia.order.model.CartItem;
 import com.apapedia.order.restservice.CartRestService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -16,109 +14,138 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping(value = "/api")
+@RequestMapping(value = "/api/cart/")
 public class CartRestController {
 
     CartRestService cartService;
 
-    CartMapper cartMapper;
-
-    CartItemMapper cartItemMapper;
-
     // POST : Create new cart
-    @PostMapping("/create-cart")
-    public ResponseEntity<Cart> createCart(@Valid @RequestBody CreateCartRequestDTO createCartRequestDTO, BindingResult bindingResult) {
-        if (bindingResult.hasFieldErrors()) {
-            String errorMessages = "";
-            List<FieldError> errors = bindingResult.getFieldErrors();
-            for (FieldError error : errors ) {
-                errorMessages += error.getDefaultMessage();
+    @PostMapping("create")
+    public ResponseEntity<?> createCart(@Valid @RequestBody CreateCartRequestDTO createCartRequestDTO, BindingResult bindingResult) {
+        try {
+            if (bindingResult.hasFieldErrors()) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
             }
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    errorMessages
-            );
+
+            Cart cart = cartService.createCart(createCartRequestDTO);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new BaseResponse<>(true, "Cart created successfully", cart));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed creating cart : " + e.getMessage()));
         }
-
-        Cart cart = cartMapper.createCartRequestDTOToCart(createCartRequestDTO);
-        cart = cartService.saveCart(cart);
-
-        return ResponseEntity.ok(cart);
     }
 
-    // POST : Edit cart item
-    @PostMapping("/update-cart-item")
-    public ResponseEntity<Cart> addCartItem(@Valid @RequestBody CreateCartItemRequestDTO createCartItemRequestDTO, BindingResult bindingResult) {
-        if (bindingResult.hasFieldErrors()) {
-            String errorMessages = "";
-            List<FieldError> errors = bindingResult.getFieldErrors();
-            for (FieldError error : errors ) {
-                errorMessages += error.getField() + " - " + error.getDefaultMessage() + "\n";
+    // POST : Add cart item
+    @PostMapping("add-item")
+    public ResponseEntity<?> addCartItem(@Valid @RequestBody CreateCartItemRequestDTO createCartItemRequestDTO, BindingResult bindingResult) {
+        try {
+            if (bindingResult.hasFieldErrors()) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
             }
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    errorMessages
-            );
-        }
 
-        CartItem cartItem = cartItemMapper.createCartItemRequestDTOToCartItem(createCartItemRequestDTO);
-        Cart cart = cartService.updateCartItem(createCartItemRequestDTO.getCartId(), cartItem);
-        if (cart == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Cart does not exist"
-            );
+            Cart cart = cartService.addCartItem(createCartItemRequestDTO);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new BaseResponse<>(true, "Cart item created successfully", cart));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(false, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed creating cart item : " + e.getMessage()));
         }
-        return ResponseEntity.ok(cart);
+    }
+
+    // PUT : Update cart item quantity
+    @PutMapping("update-item")
+    public ResponseEntity<?> updateCartItem(@Valid @RequestBody UpdateCartItemRequestDTO updateCartItemRequestDTO, BindingResult bindingResult) {
+        try {
+            if (bindingResult.hasFieldErrors()) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+            }
+
+            Cart cart = cartService.updateCardItem(updateCartItemRequestDTO);
+            return ResponseEntity.ok(new BaseResponse<>(true, "Cart item updated successfully", cart));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(false, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed updating cart item : " + e.getMessage()));
+        }
     }
 
     // GET Cart by User ID
-    @GetMapping("/get-cart/{userId}")
-    public ResponseEntity<Cart> getCartByUserId(@PathVariable("userId") String userId) {
-        Cart cart = cartService.getCartByUserId(UUID.fromString(userId));
-        if (cart == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Cart does not exist"
-            );
+    @GetMapping("{userId}")
+    public ResponseEntity<?> getCartByUserId(@PathVariable("userId") String userId) {
+        try {
+            UUID userIdUUID = UUID.fromString(userId);
+            Cart cart = cartService.getCartByUserId(userIdUUID);
+            if (cart == null) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(new BaseResponse<>(false, "Cart does not exist"));
+            }
+
+            return ResponseEntity.ok(new BaseResponse<>(true, "Cart fetched successfully", cart));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(false, "Invalid customer ID format. It should be a valid UUID."));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed fetching cart : " + e.getMessage()));
         }
-        return ResponseEntity.ok(cart);
     }
 
-    @DeleteMapping("/delete-cart-item")
-    public ResponseEntity<DeleteCartItemResponseDTO> deleteCartItem(@Valid @RequestBody DeleteCartItemRequestDTO deleteCartItemRequestDTO, BindingResult bindingResult) {
-        if (bindingResult.hasFieldErrors()) {
-            String errorMessages = "";
-            List<FieldError> errors = bindingResult.getFieldErrors();
-            for (FieldError error : errors ) {
-                errorMessages += error.getField() + " - " + error.getDefaultMessage() + "\n";
-            }
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    errorMessages
-            );
-        }
-
-        UUID cartItemId = deleteCartItemRequestDTO.getCartItemId();
-        UUID cartId = deleteCartItemRequestDTO.getCartId();
+    // DELETE :  Delete Cart Item
+    @DeleteMapping("delete-item")
+    public ResponseEntity<?> deleteCartItem(@Valid @RequestBody DeleteCartItemRequestDTO deleteCartItemRequestDTO, BindingResult bindingResult) {
         try {
-            cartService.deleteCartItem(cartId, cartItemId);
-        } catch (NoSuchElementException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    e.getMessage()
-            );
-        }
+            if (bindingResult.hasFieldErrors()) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+            }
 
-        String message = "Cart item with ID " + cartItemId + " has been successfully deleted";
-        return ResponseEntity.ok(new DeleteCartItemResponseDTO(message));
+            Cart cart = cartService.deleteCartItem(deleteCartItemRequestDTO);
+            String message = "Cart item with ID " + deleteCartItemRequestDTO.getCartItemId() + " has been successfully deleted";
+            return ResponseEntity.ok(new BaseResponse<>(true, message, cart));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(false, e.getMessage()));
+        }
+    }
+
+    private String getBindingErrorMessage(BindingResult bindingResult) {
+        StringBuilder errorMessages = new StringBuilder();
+        List<FieldError> errors = bindingResult.getFieldErrors();
+        for (FieldError error : errors ) {
+            errorMessages.append(error.getField())
+                    .append(" - ")
+                    .append(error.getDefaultMessage())
+                    .append("\n");
+        }
+        return errorMessages.toString();
     }
 }

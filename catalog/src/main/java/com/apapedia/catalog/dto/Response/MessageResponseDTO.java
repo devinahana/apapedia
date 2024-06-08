@@ -1,5 +1,4 @@
-package com.apapedia.order.dto.response;
-
+package com.apapedia.catalog.dto.Response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,6 +6,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DeleteCartItemResponseDTO {
+public class MessageResponseDTO {
     String message;
 }

@@ -1,20 +1,20 @@
 package com.apapedia.order.restservice;
 
+import com.apapedia.order.dto.request.CreateCartItemRequestDTO;
+import com.apapedia.order.dto.request.CreateCartRequestDTO;
+import com.apapedia.order.dto.request.DeleteCartItemRequestDTO;
+import com.apapedia.order.dto.request.UpdateCartItemRequestDTO;
 import com.apapedia.order.model.Cart;
-import com.apapedia.order.model.CartItem;
-
 import java.util.UUID;
 
 public interface CartRestService {
-    Cart saveCart(Cart cart);
+    Cart createCart(CreateCartRequestDTO createCartRequestDTO);
 
+    Cart addCartItem(CreateCartItemRequestDTO createCartItemRequestDTO);
 
-    Cart findCartById(UUID cartId);
-    CartItem findCartItemById(UUID cartItemId);
-
-    Cart updateCartItem(UUID cartId, CartItem cartItem);
+    Cart updateCardItem(UpdateCartItemRequestDTO updateCartItemRequestDTO);
 
     Cart getCartByUserId(UUID userId);
 
-    void deleteCartItem(UUID cartId, UUID cartItemId);
+    Cart deleteCartItem(DeleteCartItemRequestDTO deleteCartItemRequestDTO);
 }

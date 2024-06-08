@@ -7,8 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigInteger;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,14 +23,13 @@ public class Cart {
     private UUID id = UUID.randomUUID();
 
     @NotNull
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(unique = true)
     private UUID userId;
 
     @NotNull
-    @Column(name = "total_price", nullable = false)
-    private BigInteger totalPrice = BigInteger.ZERO;
+    private BigDecimal totalPrice = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "cart", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonManagedReference
-    private List<CartItem> listCartItem;
+    private List<CartItem> listCartItem = new ArrayList<>();
 }

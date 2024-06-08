@@ -7,13 +7,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.beans.factory.annotation.Value;
-
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.UUID;
 import java.util.List;
-
 
 @Getter
 @Setter
@@ -36,25 +33,30 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private Date updatedAt;
 
+    /*
+    * 0: Menunggu konfirmasi
+    * 1: Dikonfirmasi penjual
+    * 2: Menunggu kurir
+    * 3: Dalam perjalanan
+    * 4: Barang diterima
+    * 5: Selesai
+    * */
     @NotNull
-    @Value("0")
-    @Column(name = "status", nullable = false)
-    private int status;
+    @Min(0)
+    @Max(5)
+    private int status = 0;
 
     @NotNull
-    @Column(name = "total_price", nullable = false)
-    private BigInteger totalPrice = BigInteger.ZERO;
+    private BigDecimal totalPrice = BigDecimal.ZERO;
 
     @NotNull
-    @Column(name = "customer", nullable = false)
     private UUID customer;
 
     @NotNull
-    @Column(name = "seller", nullable = false)
     private UUID seller;
 
     @NotNull
-    @OneToMany(mappedBy = "orderId", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<OrderItem> listOrderItem;
 }

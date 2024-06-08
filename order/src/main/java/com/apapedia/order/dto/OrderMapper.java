@@ -6,8 +6,7 @@ import com.apapedia.order.model.OrderItem;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
-
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
@@ -16,14 +15,14 @@ public interface OrderMapper {
 
     @AfterMapping
     default void setOrderItem(@MappingTarget Order order, CreateOrderRequestDTO createOrderRequestDTO) {
-        BigInteger totalPrice = order.getTotalPrice();
+        BigDecimal totalPrice = BigDecimal.ZERO;
         List<OrderItem> listOrderItem = createOrderRequestDTO.getListOrderItem();
         if (listOrderItem != null && !listOrderItem.isEmpty()) {
             for (OrderItem orderItem : listOrderItem) {
-                orderItem.setOrderId(order);
+                orderItem.setOrder(order);
                 totalPrice = totalPrice.add(
                         orderItem.getProductPrice().multiply(
-                                BigInteger.valueOf(orderItem.getQuantity())
+                                BigDecimal.valueOf(orderItem.getQuantity())
                         )
                 );
             }
