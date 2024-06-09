@@ -1,12 +1,13 @@
 package com.apapedia.catalog.restservice;
 
+import com.apapedia.catalog.model.Catalog;
 import com.apapedia.catalog.model.Category;
+import com.apapedia.catalog.model.enumerator.CategoryName;
 import com.apapedia.catalog.repository.CategoryDb;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.UUID;
+import java.util.NoSuchElementException;
 
 @Service
 @AllArgsConstructor
@@ -14,13 +15,27 @@ public class CategoryRestServiceImpl implements CategoryRestService {
 
     CategoryDb categoryDb;
 
-    @Override
-    public Category saveCategory(Category category) {
+    private Category saveCategory(Category category) {
         return categoryDb.save(category);
     }
 
+    private boolean isCategoryTableEmpty() {
+        return !categoryDb.existsAny();
+    }
+
     @Override
-    public Category findById(UUID id) {
+    public void createCategory() {
+        if (this.isCategoryTableEmpty()) {
+            for (CategoryName categoryName : CategoryName.values()) {
+                Category category = new Category();
+                category.setName(categoryName);
+                this.saveCategory(category);
+            }
+        }
+    }
+
+    @Override
+    public Category findById(Long id) {
         return categoryDb.findById(id).orElse(null);
     }
 
@@ -30,7 +45,12 @@ public class CategoryRestServiceImpl implements CategoryRestService {
     }
 
     @Override
-    public boolean isCategoryTableEmpty() {
-        return !categoryDb.existsAny();
+    public List<Catalog> getListCatalog(Long id) {
+        Category category = this.findById(id);
+        if (category == null) {
+            throw new NoSuchElementException("Category with ID " + id + " not found");
+        }
+
+        return category.getListCatalog();
     }
 }

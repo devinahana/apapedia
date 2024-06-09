@@ -9,8 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
-
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -18,9 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "catalog")
 @SQLDelete(sql = "UPDATE catalog SET is_deleted = true WHERE id=?")
-@Where(clause = "is_deleted=false")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Catalog {
     @Id
@@ -30,7 +27,7 @@ public class Catalog {
     private UUID seller;
 
     @NotNull
-    private BigInteger price = BigInteger.ZERO;
+    private BigDecimal price = BigDecimal.ZERO;
 
     @NotNull
     private String productName;
