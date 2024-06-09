@@ -139,8 +139,7 @@ public class OrderRestController {
         StringBuilder errorMessages = new StringBuilder();
         List<FieldError> errors = bindingResult.getFieldErrors();
         for (FieldError error : errors ) {
-            errorMessages.append(error.getField())
-                    .append(" - ")
+            errorMessages
                     .append(error.getDefaultMessage())
                     .append("\n");
         }
