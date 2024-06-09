@@ -1,5 +1,5 @@
 # APAPEDIA Backend
-This repository contains the API backend built for the APAPEDIA e-commerce website. It was developed as part of the final project for the Enterprise Application Programming course. The website is constructed using a **microservice** architecture, consisting of three primary services, Catalog, Order, and User Service.
+This repository contains the API backend built for the APAPEDIA e-commerce website. It was developed as part of the final project for the Enterprise Application Programming course. The website is constructed using a **microservice** architecture, consisting of three primary services, Catalog, Order, and User Service. Checkout the API Documentation [here](https://docs.google.com/document/d/1e9xxnH1Q4f0g-abZNKhmCT4V_m9AtI61WhrVTsU6mXc/edit?usp=sharing)
 ![image](backend-architecture.png)
 
 ## Services
@@ -11,6 +11,7 @@ The Order Service handles all aspects of order management within the e-commerce 
 
 3. **User Service**<br>
 The User Service is responsible for authenticating users on the APAPEDIA platform. It manages user information for both sellers and customers, and utilizes JWT tokens for authentication.
+
 
 ## Tech Stack
 <p>
