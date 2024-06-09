@@ -8,7 +8,8 @@ import com.apapedia.catalog.model.Category;
 import com.apapedia.catalog.repository.CatalogDb;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -28,16 +29,20 @@ public class CatalogRestServiceImpl implements CatalogRestService{
     }
 
     @Override
-    public Catalog createCatalog(CreateCatalogRequestDTO createCatalogRequestDTO) {
-        Catalog catalog = catalogMapper.createCatalogRequestDTOToCatalog(createCatalogRequestDTO);
+    public Catalog createCatalog(CreateCatalogRequestDTO createCatalogRequestDTO)  throws IOException {
+        if (createCatalogRequestDTO.getStock() < 1) {
+            throw new IllegalArgumentException("Stock cannot be less than 1");
+        }
 
-        UUID categoryId = createCatalogRequestDTO.getCategoryId();
+        Long categoryId = createCatalogRequestDTO.getCategoryId();
         Category category = categoryService.findById(categoryId);
         if (category == null) {
             throw new IllegalArgumentException("Category with ID " + categoryId + " not found");
-        } else {
-            catalog.setCategory(category);
         }
+
+        Catalog catalog = catalogMapper.createCatalogRequestDTOToCatalog(createCatalogRequestDTO);
+        catalog.setCategory(category);
+
         return this.saveCatalog(catalog);
     }
 
@@ -57,29 +62,41 @@ public class CatalogRestServiceImpl implements CatalogRestService{
 
     @Override
     public List<Catalog> findBySeller(UUID sellerId) {
-        return catalogDb.findAllBySellerOrderByProductNameAscIgnoreCase(sellerId);
+        return catalogDb.findBySellerOrderByProductNameAscIgnoreCase(sellerId);
     }
 
     @Override
-    public Catalog updateCatalog(Catalog catalog, UpdateCatalogRequestDTO updateCatalogRequestDTO) {
+    public Catalog updateCatalog(Catalog catalog, UpdateCatalogRequestDTO updateCatalogRequestDTO) throws IOException {
         if (updateCatalogRequestDTO.getProductName() != null) {
             catalog.setProductName(updateCatalogRequestDTO.getProductName());
         }
+
         if (updateCatalogRequestDTO.getProductDescription() != null) {
             catalog.setProductDescription(updateCatalogRequestDTO.getProductDescription());
         }
+
         if (updateCatalogRequestDTO.getPrice() != null) {
             catalog.setPrice(updateCatalogRequestDTO.getPrice());
         }
-        if (updateCatalogRequestDTO.getStock() != 0) { // assuming stock cannot be negative and 0 means not updated
+
+        if (updateCatalogRequestDTO.getStock() != null) { // assuming stock cannot be negative and 0 means not updated
+            if (updateCatalogRequestDTO.getStock() < 0) {
+                throw new IllegalArgumentException("Stock cannot be less than 0");
+            }
             catalog.setStock(updateCatalogRequestDTO.getStock());
         }
-        if (updateCatalogRequestDTO.getCategoryId() != null) {
-            catalog.setCategoryId(updateCatalogRequestDTO.getCategoryId());
+
+        Long categoryId = updateCatalogRequestDTO.getCategoryId();
+        if (categoryId != null) {
+            Category category = categoryService.findById(categoryId);
+            if (category == null) {
+                throw new IllegalArgumentException("Category with ID " + categoryId + " not found");
+            }
+            catalog.setCategory(category);
         }
-        if (updateCatalogRequestDTO.getImageFile() != null && !updateCatalogRequestDTO.getImageFile().isEmpty()) {
-            // handle the image file processing and updating
-            byte[] imageBytes = updateCatalogRequestDTO.getImageFile().getBytes();
+
+        if (updateCatalogRequestDTO.getImage() != null && !updateCatalogRequestDTO.getImage().isEmpty()) {
+            byte[] imageBytes = updateCatalogRequestDTO.getImage().getBytes();
             catalog.setImage(imageBytes);
         }
 
@@ -93,24 +110,40 @@ public class CatalogRestServiceImpl implements CatalogRestService{
     }
 
     @Override
-    public List<Catalog> findBySellerIdNameAsc(UUID sellerId) {
-        return catalogDb.findBySellerOrderByProductNameAscIgnoreCase(sellerId);
+    public List<Catalog> findByName(String productName) {
+        return catalogDb.findByProductNameContainingIgnoreCaseOrderByProductNameAscIgnoreCase(productName);
     }
 
     @Override
-    public List<Catalog> findBySellerIdNameDesc(UUID sellerId) {
-        return catalogDb.findBySellerOrderByProductNameDescIgnoreCase(sellerId);
-    }
-
-
-    @Override
-    public List<Catalog> findAllNameAsc() {
-        return catalogDb.findAllByIsDeletedFalseOrderByProductNameAscIgnoreCase();
+    public List<Catalog> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
+        return catalogDb.findByPriceBetweenOrderByPriceAsc(minPrice, maxPrice);
     }
 
     @Override
-    public List<Catalog> findAllNameDesc() {
-        return catalogDb.findAllByIsDeletedFalseOrderByProductNameDescIgnoreCase();
+    public List<Catalog> findByPriceMin(BigDecimal minPrice) {
+        return catalogDb.findByPriceGreaterThanEqualOrderByPriceAsc(minPrice);
     }
 
+    @Override
+    public List<Catalog> findByPriceMax(BigDecimal maxPrice) {
+        return catalogDb.findByPriceLessThanEqualOrderByPriceAsc(maxPrice);
+    }
+
+    @Override
+    public List<Catalog> sortByPrice(Boolean isAscending) {
+        if (isAscending) {
+            return catalogDb.findAllByOrderByPriceAsc();
+        } else {
+            return catalogDb.findAllByOrderByPriceDesc();
+        }
+    }
+
+    @Override
+    public List<Catalog> sortByName(Boolean isAscending) {
+        if (isAscending) {
+            return catalogDb.findAllByOrderByProductNameAscIgnoreCase();
+        } else {
+            return catalogDb.findAllByOrderByProductNameDescIgnoreCase();
+        }
+    }
 }

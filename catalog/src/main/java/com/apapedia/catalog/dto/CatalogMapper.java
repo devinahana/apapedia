@@ -10,14 +10,10 @@ import java.io.IOException;
 
 @Mapper(componentModel = "spring")
 public interface CatalogMapper {
-    Catalog createCatalogRequestDTOToCatalog(CreateCatalogRequestDTO createCatalogRequestDTO);
+    Catalog createCatalogRequestDTOToCatalog(CreateCatalogRequestDTO createCatalogRequestDTO) throws IOException;
 
     @AfterMapping
-    default void setImage(@MappingTarget Catalog catalog, CreateCatalogRequestDTO createCatalogRequestDTO) {
-        try {
-            catalog.setImage(createCatalogRequestDTO.getImageFile().getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    default void setImage(@MappingTarget Catalog catalog, CreateCatalogRequestDTO createCatalogRequestDTO) throws IOException {
+        catalog.setImage(createCatalogRequestDTO.getImageFile().getBytes());
     }
 }

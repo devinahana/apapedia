@@ -9,10 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -23,11 +21,16 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Category {
     @Id
-    private UUID id = UUID.randomUUID();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     private CategoryName name;
+
+    public String getName() {
+        return this.name.toString();
+    }
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonBackReference

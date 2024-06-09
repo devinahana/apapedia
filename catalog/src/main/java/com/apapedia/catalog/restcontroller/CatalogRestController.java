@@ -1,8 +1,6 @@
 package com.apapedia.catalog.restcontroller;
 
-import com.apapedia.catalog.dto.CatalogMapper;
 import com.apapedia.catalog.dto.Response.BaseResponse;
-import com.apapedia.catalog.dto.Response.MessageResponseDTO;
 import com.apapedia.catalog.dto.request.CreateCatalogRequestDTO;
 import com.apapedia.catalog.dto.request.UpdateCatalogRequestDTO;
 import com.apapedia.catalog.model.Catalog;
@@ -12,11 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -24,7 +19,7 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping(value = "/api/catalog/")
+@RequestMapping(value = "/api/catalog")
 public class CatalogRestController {
     CatalogRestService catalogService;
 
@@ -34,9 +29,9 @@ public class CatalogRestController {
             @RequestParam BigDecimal price,
             @RequestParam String productName,
             @RequestParam String productDescription,
-            @RequestParam int stock,
-            @RequestParam UUID categoryId,
-            @RequestParam MultipartFile imageFile
+            @RequestParam Integer stock,
+            @RequestParam Long categoryId,
+            @RequestParam MultipartFile image
     ) {
         try {
             CreateCatalogRequestDTO catalogDTO = new CreateCatalogRequestDTO(
@@ -46,7 +41,7 @@ public class CatalogRestController {
                     productDescription,
                     stock,
                     categoryId,
-                    imageFile
+                    image
             );
 
             Catalog catalog = catalogService.createCatalog(catalogDTO);
@@ -57,6 +52,10 @@ public class CatalogRestController {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(new BaseResponse<>(false, e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(false, "Error uploading image : " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -64,8 +63,8 @@ public class CatalogRestController {
         }
     }
 
-    @GetMapping("list")
-    public ResponseEntity<?> getAllCatalog(@RequestParam(name = "sellerId", required = false) String sellerId) {
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllCatalog(@RequestParam(required = false) String sellerId) {
         try {
             List<Catalog> listCatalog = new ArrayList<>();
 
@@ -88,15 +87,15 @@ public class CatalogRestController {
         }
     }
 
-    @PutMapping("{catalogId}")
+    @PutMapping("/{catalogId}")
     public ResponseEntity<?> updateCatalogDetail(
-            @PathVariable("catalogId") String catalogId,
+            @PathVariable String catalogId,
             @RequestParam(required = false) String productName,
             @RequestParam(required = false) String productDescription,
             @RequestParam(required = false) BigDecimal price,
-            @RequestParam(required = false) int stock,
-            @RequestParam(required = false) UUID categoryId,
-            @RequestParam(required = false) MultipartFile imageFile
+            @RequestParam(required = false) Integer stock,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) MultipartFile image
     ) {
         try {
             UUID catalogIdUUID = UUID.fromString(catalogId);
@@ -108,18 +107,22 @@ public class CatalogRestController {
                     price,
                     stock,
                     categoryId,
-                    imageFile
+                    image
             );
             Catalog updatedCatalog = catalogService.updateCatalog(catalog, catalogDTO);
             return ResponseEntity.ok(new BaseResponse<>(true, "Catalog detail updated successfully", updatedCatalog));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(new BaseResponse<>(false, "Invalid catalog ID format. It should be a valid UUID."));
+                    .body(new BaseResponse<>(false, e.getMessage()));
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(new BaseResponse<>(false, e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(false, "Error uploading image : " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -127,8 +130,8 @@ public class CatalogRestController {
         }
     }
 
-    @GetMapping("{catalogId}")
-    public ResponseEntity<?> getCatalogDetail(@PathVariable("catalogId") String catalogId) {
+    @GetMapping("/{catalogId}")
+    public ResponseEntity<?> getCatalogDetail(@PathVariable String catalogId) {
         try {
             UUID catalogIdUUID = UUID.fromString(catalogId);
             Catalog catalog = catalogService.findById(catalogIdUUID);
@@ -148,8 +151,8 @@ public class CatalogRestController {
         }
     }
 
-    @DeleteMapping("{catalogId}")
-    public ResponseEntity<?> deleteCatalogById(@PathVariable("catalogId") String catalogId) {
+    @DeleteMapping("/{catalogId}")
+    public ResponseEntity<?> deleteCatalogById(@PathVariable String catalogId) {
         try {
             UUID catalogIdUUID = UUID.fromString(catalogId);
             catalogService.deleteCatalogById(catalogIdUUID);
@@ -168,6 +171,83 @@ public class CatalogRestController {
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new BaseResponse<>(false, "Failed deleting catalog : " + e.getMessage()));
         }
+    }
 
+    @GetMapping("/name")
+    public ResponseEntity<?> getCatalogByName(@RequestParam String q) {
+        try {
+            List<Catalog> listCatalog = catalogService.findByName(q);
+            return ResponseEntity.ok(new BaseResponse<>(true, "Catalog fetched successfully", listCatalog));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed fetching catalog : " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/price")
+    public ResponseEntity<?> getCatalogByPrice(
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+        try {
+            List<Catalog> listCatalog = new ArrayList<>();
+            if (minPrice == null && maxPrice == null) {
+                listCatalog = catalogService.findAll();
+            } else if (minPrice != null && maxPrice == null) {
+                listCatalog = catalogService.findByPriceMin(minPrice);
+            } else if (minPrice == null && maxPrice != null) {
+                listCatalog = catalogService.findByPriceMax(maxPrice);
+            } else {
+                if (minPrice.compareTo(maxPrice) > 0) {
+                    throw new IllegalArgumentException("Min price must be less than max price");
+                } else {
+                    listCatalog = catalogService.findByPriceRange(minPrice, maxPrice);
+                }
+            }
+
+            return ResponseEntity.ok(new BaseResponse<>(true, "Catalog fetched successfully", listCatalog));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(false, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed fetching catalog : " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/sort-price")
+    public ResponseEntity<?> getSortedPriceCatalog(@RequestParam(required = false) Boolean isAscending) {
+        try {
+            List<Catalog> listCatalog = new ArrayList<>();
+            if (isAscending == null  || isAscending) {
+                listCatalog = catalogService.sortByPrice(true);
+            } else {
+                listCatalog = catalogService.sortByPrice(false);
+            }
+            return ResponseEntity.ok(new BaseResponse<>(true, "Catalog fetched successfully", listCatalog));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed fetching catalog : " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/sort-name")
+    public ResponseEntity<?> getSortedNameCatalog(@RequestParam(required = false) Boolean isAscending) {
+        try {
+            List<Catalog> listCatalog = new ArrayList<>();
+            if (isAscending == null  || isAscending) {
+                listCatalog = catalogService.sortByName(true);
+            } else {
+                listCatalog = catalogService.sortByName(false);
+            }
+            return ResponseEntity.ok(new BaseResponse<>(true, "Catalog fetched successfully", listCatalog));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed fetching catalog : " + e.getMessage()));
+        }
     }
 }
