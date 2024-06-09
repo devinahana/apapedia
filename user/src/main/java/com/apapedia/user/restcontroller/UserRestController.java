@@ -59,7 +59,9 @@ public class UserRestController {
             }
 
             UserModel user = userService.createUser(requestDTO);
-            return ResponseEntity.ok(new BaseResponse<>(true, "User created successfully", user));
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new BaseResponse<>(true, "User created successfully", user));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)

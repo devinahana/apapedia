@@ -49,9 +49,7 @@ public class OrderRestController {
     public ResponseEntity<?> changeOrderStatus(@Valid @RequestBody ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST)
-                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
             }
 
             Order order = orderService.changeOrderStatus(changeOrderStatusRequestDTO);
@@ -69,7 +67,7 @@ public class OrderRestController {
 
     // GET Order by Customer Id
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<?> getOrderByCustomerId(@PathVariable("customerId") String customerId) {
+    public ResponseEntity<?> getOrderByCustomerId(@PathVariable String customerId) {
         try {
             UUID customerIdUUID = UUID.fromString(customerId);
 
@@ -92,7 +90,7 @@ public class OrderRestController {
 
     // GET Order by Seller Id
     @GetMapping("/seller/{sellerId}")
-    public ResponseEntity<?> getOrderBySellerId(@PathVariable("sellerId") String sellerId) {
+    public ResponseEntity<?> getOrderBySellerId(@PathVariable String sellerId) {
         try {
             UUID sellerIdUUID = UUID.fromString(sellerId);
 
@@ -115,7 +113,7 @@ public class OrderRestController {
 
     // GET sales per day for this month
     @GetMapping("/monthly-sales/{sellerId}")
-    public ResponseEntity<?> getSalesPerDay(@PathVariable("sellerId") String sellerId) {
+    public ResponseEntity<?> getSalesPerDay(@PathVariable String sellerId) {
         try {
             UUID sellerIdUUID = UUID.fromString(sellerId);
 

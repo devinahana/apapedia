@@ -50,15 +50,11 @@ public class CartRestController {
     public ResponseEntity<?> addCartItem(@Valid @RequestBody CreateCartItemRequestDTO createCartItemRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST)
-                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
             }
 
             Cart cart = cartService.addCartItem(createCartItemRequestDTO);
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(new BaseResponse<>(true, "Cart item created successfully", cart));
+            return ResponseEntity.ok(new BaseResponse<>(true, "Cart item created successfully", cart));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -75,9 +71,7 @@ public class CartRestController {
     public ResponseEntity<?> updateCartItem(@Valid @RequestBody UpdateCartItemRequestDTO updateCartItemRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST)
-                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
             }
 
             Cart cart = cartService.updateCardItem(updateCartItemRequestDTO);
@@ -95,7 +89,7 @@ public class CartRestController {
 
     // GET Cart by User ID
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getCartByUserId(@PathVariable("userId") String userId) {
+    public ResponseEntity<?> getCartByUserId(@PathVariable String userId) {
         try {
             UUID userIdUUID = UUID.fromString(userId);
             Cart cart = cartService.getCartByUserId(userIdUUID);
@@ -141,8 +135,7 @@ public class CartRestController {
         StringBuilder errorMessages = new StringBuilder();
         List<FieldError> errors = bindingResult.getFieldErrors();
         for (FieldError error : errors ) {
-            errorMessages.append(error.getField())
-                    .append(" - ")
+            errorMessages
                     .append(error.getDefaultMessage())
                     .append("\n");
         }

@@ -26,8 +26,8 @@ public class CatalogRestController {
     @PostMapping("")
     public ResponseEntity<?> createCatalog(
             @RequestParam UUID seller,
-            @RequestParam BigDecimal price,
             @RequestParam String productName,
+            @RequestParam BigDecimal price,
             @RequestParam String productDescription,
             @RequestParam Integer stock,
             @RequestParam Long categoryId,
