@@ -19,13 +19,13 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping(value = "/api/cart/")
+@RequestMapping(value = "/api/cart")
 public class CartRestController {
 
     CartRestService cartService;
 
     // POST : Create new cart
-    @PostMapping("create")
+    @PostMapping("")
     public ResponseEntity<?> createCart(@Valid @RequestBody CreateCartRequestDTO createCartRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
@@ -46,7 +46,7 @@ public class CartRestController {
     }
 
     // POST : Add cart item
-    @PostMapping("add-item")
+    @PostMapping("/add-item")
     public ResponseEntity<?> addCartItem(@Valid @RequestBody CreateCartItemRequestDTO createCartItemRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
@@ -71,7 +71,7 @@ public class CartRestController {
     }
 
     // PUT : Update cart item quantity
-    @PutMapping("update-item")
+    @PutMapping("/update-item")
     public ResponseEntity<?> updateCartItem(@Valid @RequestBody UpdateCartItemRequestDTO updateCartItemRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
@@ -94,7 +94,7 @@ public class CartRestController {
     }
 
     // GET Cart by User ID
-    @GetMapping("{userId}")
+    @GetMapping("/{userId}")
     public ResponseEntity<?> getCartByUserId(@PathVariable("userId") String userId) {
         try {
             UUID userIdUUID = UUID.fromString(userId);
@@ -118,7 +118,7 @@ public class CartRestController {
     }
 
     // DELETE :  Delete Cart Item
-    @DeleteMapping("delete-item")
+    @DeleteMapping("/delete-item")
     public ResponseEntity<?> deleteCartItem(@Valid @RequestBody DeleteCartItemRequestDTO deleteCartItemRequestDTO, BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
