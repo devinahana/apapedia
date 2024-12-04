@@ -9,13 +9,14 @@ import com.apapedia.user.dto.response.BaseResponse;
 import com.apapedia.user.dto.response.LoginResponseDTO;
 import com.apapedia.user.model.UserModel;
 import com.apapedia.user.service.UserService;
+import com.apapedia.user.utils.ResponseUtils;
+
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 
@@ -26,13 +27,14 @@ import java.util.*;
 public class UserRestController {
     UserService userService;
     UserMapper userMapper;
+    ResponseUtils responseUtils;
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable String id, @RequestAttribute("userId") String tokenUserId) {
         try {
             UUID userIdUUID = UUID.fromString(id);
             if (!id.equals(tokenUserId)) {
-                return getForbiddenResponse("fetch this user data");
+                return responseUtils.getForbiddenResponse("fetch this user data");
             }
             UserModel user = userService.getUserById(userIdUUID);
             return ResponseEntity.ok(new BaseResponse<>(true, "User fetched successfully", user));
@@ -57,7 +59,7 @@ public class UserRestController {
             BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
+                throw new IllegalArgumentException(responseUtils.getBindingErrorMessage(bindingResult));
             }
 
             UserModel user = userService.createUser(requestDTO);
@@ -81,7 +83,7 @@ public class UserRestController {
             BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
+                throw new IllegalArgumentException(responseUtils.getBindingErrorMessage(bindingResult));
             }
 
             LoginResponseDTO user = userService.login(requestDTO);
@@ -102,7 +104,7 @@ public class UserRestController {
         try {
             UUID userIdUUID = UUID.fromString(id);
             if (!id.equals(tokenUserId)) {
-                return getForbiddenResponse("delete this user");
+                return responseUtils.getForbiddenResponse("delete this user");
             }
 
             userService.deleteUserById(userIdUUID);
@@ -129,11 +131,11 @@ public class UserRestController {
             @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
+                throw new IllegalArgumentException(responseUtils.getBindingErrorMessage(bindingResult));
             }
 
             if (!requestDTO.getId().toString().equals(tokenUserId)) {
-                return getForbiddenResponse("update balance of this user");
+                return responseUtils.getForbiddenResponse("update balance of this user");
             }
 
             UserModel user = userService.updateUserBalance(requestDTO);
@@ -160,11 +162,11 @@ public class UserRestController {
             @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
+                throw new IllegalArgumentException(responseUtils.getBindingErrorMessage(bindingResult));
             }
 
             if (!updateUserRequestDTO.getId().toString().equals(tokenUserId)) {
-                return getForbiddenResponse("update this user detail");
+                return responseUtils.getForbiddenResponse("update this user detail");
             }
 
             UserModel user = userService.updateUser(updateUserRequestDTO);
@@ -182,22 +184,5 @@ public class UserRestController {
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new BaseResponse<>(false, "Failed updating user detail : " + e.getMessage()));
         }
-    }
-
-    private String getBindingErrorMessage(BindingResult bindingResult) {
-        StringBuilder errorMessages = new StringBuilder();
-        List<FieldError> errors = bindingResult.getFieldErrors();
-        for (FieldError error : errors) {
-            errorMessages
-                    .append(error.getDefaultMessage())
-                    .append("\n");
-        }
-        return errorMessages.toString();
-    }
-
-    private ResponseEntity<?> getForbiddenResponse(String action) {
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(new BaseResponse<>(false, "You are not allowed to " + action));
     }
 }
