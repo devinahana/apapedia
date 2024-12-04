@@ -7,14 +7,15 @@ import com.apapedia.order.dto.request.UpdateCartItemRequestDTO;
 import com.apapedia.order.dto.response.BaseResponse;
 import com.apapedia.order.model.Cart;
 import com.apapedia.order.restservice.CartRestService;
+import com.apapedia.order.utils.ResponseUtils;
+
+import org.springframework.security.core.AuthenticationException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,14 +25,23 @@ public class CartRestController {
 
     CartRestService cartService;
 
+    ResponseUtils responseUtils;
+
     // POST : Create new cart
     @PostMapping("")
-    public ResponseEntity<?> createCart(@Valid @RequestBody CreateCartRequestDTO createCartRequestDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> createCart(
+            @Valid @RequestBody CreateCartRequestDTO createCartRequestDTO,
+            BindingResult bindingResult,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+                        .body(new BaseResponse<>(false, responseUtils.getBindingErrorMessage(bindingResult)));
+            }
+
+            if (!createCartRequestDTO.getUserId().equals(UUID.fromString(tokenUserId))) {
+                return responseUtils.getForbiddenResponse("create cart for this user");
             }
 
             Cart cart = cartService.createCart(createCartRequestDTO);
@@ -47,14 +57,19 @@ public class CartRestController {
 
     // POST : Add cart item
     @PostMapping("/add-item")
-    public ResponseEntity<?> addCartItem(@Valid @RequestBody CreateCartItemRequestDTO createCartItemRequestDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> addCartItem(@Valid @RequestBody CreateCartItemRequestDTO createCartItemRequestDTO,
+            BindingResult bindingResult,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
+                throw new IllegalArgumentException(responseUtils.getBindingErrorMessage(bindingResult));
             }
 
-            Cart cart = cartService.addCartItem(createCartItemRequestDTO);
+            Cart cart = cartService.addCartItem(createCartItemRequestDTO, tokenUserId);
+
             return ResponseEntity.ok(new BaseResponse<>(true, "Cart item created successfully", cart));
+        } catch (AuthenticationException e) {
+            return responseUtils.getForbiddenResponse("add cart item for this user");
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -68,14 +83,19 @@ public class CartRestController {
 
     // PUT : Update cart item quantity
     @PutMapping("/update-item")
-    public ResponseEntity<?> updateCartItem(@Valid @RequestBody UpdateCartItemRequestDTO updateCartItemRequestDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> updateCartItem(
+            @Valid @RequestBody UpdateCartItemRequestDTO updateCartItemRequestDTO,
+            BindingResult bindingResult,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
+                throw new IllegalArgumentException(responseUtils.getBindingErrorMessage(bindingResult));
             }
 
-            Cart cart = cartService.updateCardItem(updateCartItemRequestDTO);
+            Cart cart = cartService.updateCardItem(updateCartItemRequestDTO, tokenUserId);
             return ResponseEntity.ok(new BaseResponse<>(true, "Cart item updated successfully", cart));
+        } catch (AuthenticationException e) {
+            return responseUtils.getForbiddenResponse("update cart item for this user");
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -89,9 +109,15 @@ public class CartRestController {
 
     // GET Cart by User ID
     @GetMapping("/{userId}")
-    public ResponseEntity<?> getCartByUserId(@PathVariable String userId) {
+    public ResponseEntity<?> getCartByUserId(
+            @PathVariable String userId,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             UUID userIdUUID = UUID.fromString(userId);
+            if (!userId.equals(tokenUserId)) {
+                return responseUtils.getForbiddenResponse("fetch cart for this user");
+            }
+
             Cart cart = cartService.getCartByUserId(userIdUUID);
             if (cart == null) {
                 return ResponseEntity
@@ -111,34 +137,33 @@ public class CartRestController {
         }
     }
 
-    // DELETE :  Delete Cart Item
+    // DELETE : Delete Cart Item
     @DeleteMapping("/delete-item")
-    public ResponseEntity<?> deleteCartItem(@Valid @RequestBody DeleteCartItemRequestDTO deleteCartItemRequestDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> deleteCartItem(
+            @Valid @RequestBody DeleteCartItemRequestDTO deleteCartItemRequestDTO,
+            BindingResult bindingResult,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+                        .body(new BaseResponse<>(false, responseUtils.getBindingErrorMessage(bindingResult)));
             }
 
-            Cart cart = cartService.deleteCartItem(deleteCartItemRequestDTO);
-            String message = "Cart item with ID " + deleteCartItemRequestDTO.getCartItemId() + " has been successfully deleted";
+            Cart cart = cartService.deleteCartItem(deleteCartItemRequestDTO, tokenUserId);
+            String message = "Cart item with ID " + deleteCartItemRequestDTO.getCartItemId()
+                    + " has been successfully deleted";
             return ResponseEntity.ok(new BaseResponse<>(true, message, cart));
+        } catch (AuthenticationException e) {
+            return responseUtils.getForbiddenResponse("delete cart item for this user");
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(new BaseResponse<>(false, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(false, "Failed deleting cart item : " + e.getMessage()));
         }
-    }
-
-    private String getBindingErrorMessage(BindingResult bindingResult) {
-        StringBuilder errorMessages = new StringBuilder();
-        List<FieldError> errors = bindingResult.getFieldErrors();
-        for (FieldError error : errors ) {
-            errorMessages
-                    .append(error.getDefaultMessage())
-                    .append("\n");
-        }
-        return errorMessages.toString();
     }
 }

@@ -5,12 +5,14 @@ import com.apapedia.order.dto.request.CreateOrderRequestDTO;
 import com.apapedia.order.dto.response.BaseResponse;
 import com.apapedia.order.model.Order;
 import com.apapedia.order.restservice.OrderRestService;
+import com.apapedia.order.utils.ResponseUtils;
+
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -22,15 +24,23 @@ import java.util.UUID;
 public class OrderRestController {
     OrderRestService orderService;
 
+    ResponseUtils responseUtils;
 
     // POST : Create new order
     @PostMapping("")
-    public ResponseEntity<?> createOrder(@Valid @RequestBody CreateOrderRequestDTO createOrderRequestDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> createOrder(
+            @Valid @RequestBody CreateOrderRequestDTO createOrderRequestDTO,
+            BindingResult bindingResult,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
-                        .body(new BaseResponse<>(false, getBindingErrorMessage(bindingResult)));
+                        .body(new BaseResponse<>(false, responseUtils.getBindingErrorMessage(bindingResult)));
+            }
+
+            if (!createOrderRequestDTO.getCustomer().toString().equals(tokenUserId)) {
+                return responseUtils.getForbiddenResponse("create order for this user");
             }
 
             Order order = orderService.createOrder(createOrderRequestDTO);
@@ -46,14 +56,19 @@ public class OrderRestController {
 
     // PUT : Change order status
     @PutMapping("/change-status")
-    public ResponseEntity<?> changeOrderStatus(@Valid @RequestBody ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> changeOrderStatus(
+            @Valid @RequestBody ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO,
+            BindingResult bindingResult,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             if (bindingResult.hasFieldErrors()) {
-                throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
+                throw new IllegalArgumentException(responseUtils.getBindingErrorMessage(bindingResult));
             }
 
-            Order order = orderService.changeOrderStatus(changeOrderStatusRequestDTO);
+            Order order = orderService.changeOrderStatus(changeOrderStatusRequestDTO, tokenUserId);
             return ResponseEntity.ok(new BaseResponse<>(true, "Order status changed successfully", order));
+        } catch (AuthenticationException e) {
+            return responseUtils.getForbiddenResponse("change order status for this user");
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -67,9 +82,14 @@ public class OrderRestController {
 
     // GET Order by Customer Id
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<?> getOrderByCustomerId(@PathVariable String customerId) {
+    public ResponseEntity<?> getOrderByCustomerId(
+            @PathVariable String customerId,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             UUID customerIdUUID = UUID.fromString(customerId);
+            if (!customerId.equals(tokenUserId)) {
+                return responseUtils.getForbiddenResponse("fetch order for this user");
+            }
 
             List<Order> listOrders = orderService.getOrderByCustomerId(customerIdUUID);
             if (listOrders == null || listOrders.isEmpty()) {
@@ -90,9 +110,14 @@ public class OrderRestController {
 
     // GET Order by Seller Id
     @GetMapping("/seller/{sellerId}")
-    public ResponseEntity<?> getOrderBySellerId(@PathVariable String sellerId) {
+    public ResponseEntity<?> getOrderBySellerId(
+            @PathVariable String sellerId,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             UUID sellerIdUUID = UUID.fromString(sellerId);
+            if (!sellerId.equals(tokenUserId)) {
+                return responseUtils.getForbiddenResponse("fetch order for this user");
+            }
 
             List<Order> listOrders = orderService.getOrderBySellerId(sellerIdUUID);
             if (listOrders == null || listOrders.isEmpty()) {
@@ -113,9 +138,14 @@ public class OrderRestController {
 
     // GET sales per day for this month
     @GetMapping("/monthly-sales/{sellerId}")
-    public ResponseEntity<?> getSalesPerDay(@PathVariable String sellerId) {
+    public ResponseEntity<?> getSalesPerDay(
+            @PathVariable String sellerId,
+            @RequestAttribute("userId") String tokenUserId) {
         try {
             UUID sellerIdUUID = UUID.fromString(sellerId);
+            if (!sellerId.equals(tokenUserId)) {
+                return responseUtils.getForbiddenResponse("fetch monthly sales for this user");
+            }
 
             Map<Integer, Integer> salesPerDay = orderService.getSalesPerDay(sellerIdUUID);
             if (salesPerDay == null) {
@@ -133,17 +163,6 @@ public class OrderRestController {
                     .body(new BaseResponse<>(false, "Failed fetching this month sales : " + e.getMessage()));
         }
 
-    }
-
-    private String getBindingErrorMessage(BindingResult bindingResult) {
-        StringBuilder errorMessages = new StringBuilder();
-        List<FieldError> errors = bindingResult.getFieldErrors();
-        for (FieldError error : errors ) {
-            errorMessages
-                    .append(error.getDefaultMessage())
-                    .append("\n");
-        }
-        return errorMessages.toString();
     }
 
 }

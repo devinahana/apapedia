@@ -10,6 +10,8 @@ import com.apapedia.order.model.Cart;
 import com.apapedia.order.model.CartItem;
 import com.apapedia.order.repository.CartDb;
 import com.apapedia.order.repository.CartItemDb;
+
+import org.springframework.security.core.AuthenticationException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -50,11 +52,13 @@ public class CartRestServiceImpl implements CartRestService {
     }
 
     @Override
-    public Cart addCartItem(CreateCartItemRequestDTO createCartItemRequestDTO) {
+    public Cart addCartItem(CreateCartItemRequestDTO createCartItemRequestDTO, String tokenUserId) {
         UUID cartId = createCartItemRequestDTO.getCartId();
         Cart cart = this.findCartById(cartId);
         if (cart == null) {
             throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
+        } else if (!cart.getUserId().toString().equals(tokenUserId)){
+            throw new AuthenticationException("User ID does not match") {};
         }
 
         CartItem cartItem = cartItemMapper.createCartItemRequestDTOToCartItem(createCartItemRequestDTO);
@@ -74,11 +78,13 @@ public class CartRestServiceImpl implements CartRestService {
     }
 
     @Override
-    public Cart updateCardItem(UpdateCartItemRequestDTO updateCartItemRequestDTO) {
+    public Cart updateCardItem(UpdateCartItemRequestDTO updateCartItemRequestDTO, String tokenUserId) {
         UUID cartId = updateCartItemRequestDTO.getCartId();
         Cart cart = this.findCartById(cartId);
         if (cart == null) {
             throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
+        } else if (!cart.getUserId().toString().equals(tokenUserId)){
+            throw new AuthenticationException("User ID does not match") {};
         }
 
         UUID cartItemId = updateCartItemRequestDTO.getCartItemId();
@@ -114,11 +120,13 @@ public class CartRestServiceImpl implements CartRestService {
     }
 
     @Override
-    public Cart deleteCartItem(DeleteCartItemRequestDTO deleteCartItemRequestDTO) {
+    public Cart deleteCartItem(DeleteCartItemRequestDTO deleteCartItemRequestDTO, String tokenUserId) {
         UUID cartId = deleteCartItemRequestDTO.getCartId();
         Cart cart = this.findCartById(cartId);
         if (cart == null) {
             throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
+        } else if (!cart.getUserId().toString().equals(tokenUserId)){
+            throw new AuthenticationException("User ID does not match") {};
         }
 
         UUID cartItemId = deleteCartItemRequestDTO.getCartItemId();

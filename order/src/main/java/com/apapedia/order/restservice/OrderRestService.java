@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface OrderRestService {
     Order createOrder(CreateOrderRequestDTO createOrderRequestDTO);
 
-    Order changeOrderStatus(ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO);
+    Order changeOrderStatus(ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO, String tokenUserId);
 
     List<Order> getOrderByCustomerId(UUID customerId);
 

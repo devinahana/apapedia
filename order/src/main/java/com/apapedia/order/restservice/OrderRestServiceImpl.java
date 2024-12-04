@@ -1,6 +1,7 @@
 package com.apapedia.order.restservice;
 
 import com.apapedia.order.dto.OrderMapper;
+import org.springframework.security.core.AuthenticationException;
 import com.apapedia.order.dto.request.ChangeOrderStatusRequestDTO;
 import com.apapedia.order.dto.request.CreateOrderRequestDTO;
 import com.apapedia.order.model.Order;
@@ -34,9 +35,13 @@ public class OrderRestServiceImpl implements OrderRestService {
     }
 
     @Override
-    public Order changeOrderStatus(ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO) {
+    public Order changeOrderStatus(ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO, String tokenUserId) {
         Order order = orderDb.findById(changeOrderStatusRequestDTO.getId()).orElse(null);
         if (order != null) {
+            if (!order.getCustomer().toString().equals(tokenUserId)
+                    && !order.getSeller().toString().equals(tokenUserId)) {
+                throw new AuthenticationException("User ID does not match") {};
+            }
             order.setStatus(changeOrderStatusRequestDTO.getStatus());
             return this.saveOrder(order);
         } else {
@@ -89,7 +94,8 @@ public class OrderRestServiceImpl implements OrderRestService {
         }
 
         for (Integer count : itemCountPerDay.values()) {
-            if (count != 0) return itemCountPerDay;
+            if (count != 0)
+                return itemCountPerDay;
         }
 
         return null;

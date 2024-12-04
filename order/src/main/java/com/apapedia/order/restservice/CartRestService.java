@@ -10,11 +10,11 @@ import java.util.UUID;
 public interface CartRestService {
     Cart createCart(CreateCartRequestDTO createCartRequestDTO);
 
-    Cart addCartItem(CreateCartItemRequestDTO createCartItemRequestDTO);
+    Cart addCartItem(CreateCartItemRequestDTO createCartItemRequestDTO, String tokenUserId);
 
-    Cart updateCardItem(UpdateCartItemRequestDTO updateCartItemRequestDTO);
+    Cart updateCardItem(UpdateCartItemRequestDTO updateCartItemRequestDTO, String tokenUserId);
 
     Cart getCartByUserId(UUID userId);
 
-    Cart deleteCartItem(DeleteCartItemRequestDTO deleteCartItemRequestDTO);
+    Cart deleteCartItem(DeleteCartItemRequestDTO deleteCartItemRequestDTO, String tokenUserId);
 }
