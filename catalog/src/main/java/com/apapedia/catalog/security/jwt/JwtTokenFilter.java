@@ -30,6 +30,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                String userId = jwtUtils.getClaimFromJwtToken(jwt, "id");
+                request.setAttribute("userId", userId);
                 String role = jwtUtils.getClaimFromJwtToken(jwt, "role");
 
                 Set<GrantedAuthority> grantedAuthoritySet = new HashSet<>();

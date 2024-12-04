@@ -25,24 +25,22 @@ public class CatalogRestController {
 
     @PostMapping("")
     public ResponseEntity<?> createCatalog(
-            @RequestParam UUID seller,
             @RequestParam String productName,
             @RequestParam BigDecimal price,
             @RequestParam String productDescription,
             @RequestParam Integer stock,
             @RequestParam Long categoryId,
-            @RequestParam MultipartFile image
-    ) {
+            @RequestParam MultipartFile image,
+            @RequestAttribute("userId") String seller) {
         try {
             CreateCatalogRequestDTO catalogDTO = new CreateCatalogRequestDTO(
-                    seller,
+                    UUID.fromString(seller),
                     productName,
                     price,
                     productDescription,
                     stock,
                     categoryId,
-                    image
-            );
+                    image);
 
             Catalog catalog = catalogService.createCatalog(catalogDTO);
             return ResponseEntity
@@ -95,11 +93,14 @@ public class CatalogRestController {
             @RequestParam(required = false) BigDecimal price,
             @RequestParam(required = false) Integer stock,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) MultipartFile image
-    ) {
+            @RequestParam(required = false) MultipartFile image,
+            @RequestAttribute("userId") String seller) {
         try {
             UUID catalogIdUUID = UUID.fromString(catalogId);
             Catalog catalog = catalogService.findById(catalogIdUUID);
+            if (!catalog.getSeller().equals(UUID.fromString(seller))) {
+                return getForbiddenResponse("update this catalog");
+            }
 
             UpdateCatalogRequestDTO catalogDTO = new UpdateCatalogRequestDTO(
                     productName,
@@ -107,8 +108,7 @@ public class CatalogRestController {
                     price,
                     stock,
                     categoryId,
-                    image
-            );
+                    image);
             Catalog updatedCatalog = catalogService.updateCatalog(catalog, catalogDTO);
             return ResponseEntity.ok(new BaseResponse<>(true, "Catalog detail updated successfully", updatedCatalog));
         } catch (IllegalArgumentException e) {
@@ -221,7 +221,7 @@ public class CatalogRestController {
     public ResponseEntity<?> getSortedPriceCatalog(@RequestParam(required = false) Boolean isAscending) {
         try {
             List<Catalog> listCatalog = new ArrayList<>();
-            if (isAscending == null  || isAscending) {
+            if (isAscending == null || isAscending) {
                 listCatalog = catalogService.sortByPrice(true);
             } else {
                 listCatalog = catalogService.sortByPrice(false);
@@ -238,7 +238,7 @@ public class CatalogRestController {
     public ResponseEntity<?> getSortedNameCatalog(@RequestParam(required = false) Boolean isAscending) {
         try {
             List<Catalog> listCatalog = new ArrayList<>();
-            if (isAscending == null  || isAscending) {
+            if (isAscending == null || isAscending) {
                 listCatalog = catalogService.sortByName(true);
             } else {
                 listCatalog = catalogService.sortByName(false);
@@ -249,5 +249,11 @@ public class CatalogRestController {
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new BaseResponse<>(false, "Failed fetching catalog : " + e.getMessage()));
         }
+    }
+
+    private ResponseEntity<?> getForbiddenResponse(String action) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new BaseResponse<>(false, "You are not allowed to " + action));
     }
 }
