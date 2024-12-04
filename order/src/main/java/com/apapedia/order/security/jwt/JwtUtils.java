@@ -1,4 +1,4 @@
-package com.apapedia.catalog.security.jwt;
+package com.apapedia.order.security.jwt;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -17,7 +17,7 @@ public class JwtUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${catalog.app.jwtSecret}")
+    @Value("${user.app.jwtSecret}")
     private String jwtSecret;
 
     public String getUserNameFromJwtToken(String token){

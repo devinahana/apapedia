@@ -52,7 +52,9 @@ public class UserRestController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody CreateUserRequestDTO requestDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> registerUser(
+            @Valid @RequestBody CreateUserRequestDTO requestDTO,
+            BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
                 throw new IllegalArgumentException(getBindingErrorMessage(bindingResult));
@@ -74,7 +76,8 @@ public class UserRestController {
     }
 
     @PostMapping(value = "/login")
-    public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequestDTO requestDTO,
+    public ResponseEntity<?> loginUser(
+            @Valid @RequestBody LoginRequestDTO requestDTO,
             BindingResult bindingResult) {
         try {
             if (bindingResult.hasFieldErrors()) {
@@ -184,7 +187,7 @@ public class UserRestController {
     private String getBindingErrorMessage(BindingResult bindingResult) {
         StringBuilder errorMessages = new StringBuilder();
         List<FieldError> errors = bindingResult.getFieldErrors();
-        for (FieldError error : errors ) {
+        for (FieldError error : errors) {
             errorMessages
                     .append(error.getDefaultMessage())
                     .append("\n");
@@ -194,8 +197,7 @@ public class UserRestController {
 
     private ResponseEntity<?> getForbiddenResponse(String action) {
         return ResponseEntity
-                    .status(HttpStatus.FORBIDDEN)
-                    .body(new BaseResponse<>(false, "You are not allowed to " + action));
+                .status(HttpStatus.FORBIDDEN)
+                .body(new BaseResponse<>(false, "You are not allowed to " + action));
     }
 }
-
