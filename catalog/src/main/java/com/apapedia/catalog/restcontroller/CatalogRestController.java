@@ -1,6 +1,6 @@
 package com.apapedia.catalog.restcontroller;
 
-import com.apapedia.catalog.dto.Response.BaseResponse;
+import com.apapedia.catalog.dto.response.BaseResponse;
 import com.apapedia.catalog.dto.request.CreateCatalogRequestDTO;
 import com.apapedia.catalog.dto.request.UpdateCatalogRequestDTO;
 import com.apapedia.catalog.model.Catalog;

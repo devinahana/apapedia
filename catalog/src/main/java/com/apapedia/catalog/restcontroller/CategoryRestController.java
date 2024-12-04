@@ -1,6 +1,6 @@
 package com.apapedia.catalog.restcontroller;
 
-import com.apapedia.catalog.dto.Response.BaseResponse;
+import com.apapedia.catalog.dto.response.BaseResponse;
 import com.apapedia.catalog.model.Catalog;
 import com.apapedia.catalog.model.Category;
 import com.apapedia.catalog.restservice.CategoryRestService;
