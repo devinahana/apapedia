@@ -30,7 +30,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private JwtUtils jwtUtils;
 
     private Gson gson = new Gson();
-    
+
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenFilter.class);
 
     @Override
@@ -42,7 +42,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 throw new IllegalArgumentException("JWT String argument cannot be null or empty.");
             } else if (!jwtUtils.validateJwtToken(jwt)) {
                 throw new IllegalArgumentException("JWT token is invalid");
-            } 
+            }
             String username = jwtUtils.getUserNameFromJwtToken(jwt);
             String userId = jwtUtils.getClaimFromJwtToken(jwt, "id");
             request.setAttribute("userId", userId);
@@ -56,9 +56,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: " + e.getMessage());
+            String errorResponse = "Cannot set user authentication: " + e.getMessage();
+            logger.error(errorResponse);
             String responseJsonString = this.gson
-                    .toJson(new BaseResponse<>(false, "Cannot set user authentication: " + e.getMessage()));
+                    .toJson(new BaseResponse<>(false, errorResponse));
             PrintWriter out = response.getWriter();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");

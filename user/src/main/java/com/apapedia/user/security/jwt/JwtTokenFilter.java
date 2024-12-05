@@ -40,19 +40,22 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException, NoSuchElementException {
         try {
             String jwt = parseJwt(request);
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                String userId = jwtUtils.getUserIDFromJwtToken(jwt);
-                request.setAttribute("userId", userId);
-
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            if (jwt == null || jwt.isEmpty()) {
+                throw new IllegalArgumentException("JWT String argument cannot be null or empty.");
+            } else if (!jwtUtils.validateJwtToken(jwt)) {
+                throw new IllegalArgumentException("JWT token is invalid");
             }
+            String username = jwtUtils.getUserNameFromJwtToken(jwt);
+            String userId = jwtUtils.getUserIDFromJwtToken(jwt);
+            request.setAttribute("userId", userId);
+
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         } catch (NoSuchElementException e) {
-            logger.error("User not found: {}", e.getMessage());
+            logger.error("User not found: " + e.getMessage());
 
             String responseJsonString = this.gson.toJson(new BaseResponse<>(false, "User not found."));
             PrintWriter out = response.getWriter();
@@ -62,8 +65,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             out.print(responseJsonString);
             out.flush();
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", (Object) e);
-            String responseJsonString = this.gson.toJson(new BaseResponse<>(false, "Cannot set user authentication: " + e.getMessage()));
+            String errorResponse = "Cannot set user authentication: " + e.getMessage();
+            logger.error(errorResponse);
+            String responseJsonString = this.gson
+                    .toJson(new BaseResponse<>(false, errorResponse));
             PrintWriter out = response.getWriter();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
