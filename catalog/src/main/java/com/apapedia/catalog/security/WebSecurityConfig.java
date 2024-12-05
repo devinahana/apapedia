@@ -16,23 +16,28 @@ import com.apapedia.catalog.security.jwt.JwtTokenFilter;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
-    @Autowired
-    private JwtTokenFilter jwtTokenFilter;
+        @Autowired
+        private JwtTokenFilter jwtTokenFilter;
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain jwtFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/api/**")
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers(HttpMethod.POST, "/api/catalog").hasAuthority("SELLER")
-                        .requestMatchers(HttpMethod.PUT, "/api/catalog/{catalogId}").hasAuthority("SELLER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/catalog/{catalogId}").hasAuthority("SELLER")
-                        .anyRequest().authenticated())
-                .sessionManagement(
-                        sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+        @Bean
+        @Order(1)
+        public SecurityFilterChain jwtFilterChain(HttpSecurity http) throws Exception {
+                http.securityMatcher("/api/**")
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
+                                                .requestMatchers("/v3/api-docs/**").permitAll()
+                                                .requestMatchers("/swagger-ui/**").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/catalog").hasAuthority("SELLER")
+                                                .requestMatchers(HttpMethod.PUT, "/api/catalog/{catalogId}")
+                                                .hasAuthority("SELLER")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/catalog/{catalogId}")
+                                                .hasAuthority("SELLER")
+                                                .anyRequest().authenticated())
+                                .sessionManagement(
+                                                sessionManagement -> sessionManagement
+                                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+                return http.build();
+        }
 }

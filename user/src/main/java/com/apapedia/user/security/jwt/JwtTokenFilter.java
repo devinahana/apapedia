@@ -39,24 +39,31 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException, NoSuchElementException {
         try {
-            String jwt = parseJwt(request);
-            if (jwt == null || jwt.isEmpty()) {
-                throw new IllegalArgumentException("JWT String argument cannot be null or empty.");
-            } else if (!jwtUtils.validateJwtToken(jwt)) {
-                throw new IllegalArgumentException("JWT token is invalid");
-            }
-            String username = jwtUtils.getUserNameFromJwtToken(jwt);
-            String userId = jwtUtils.getUserIDFromJwtToken(jwt);
-            request.setAttribute("userId", userId);
+            String uri = request.getRequestURI();
+            if (!(uri.equals("/api/user/login")
+                    || uri.equals("/api/user/register")
+                    || uri.equals("/favicon.ico")
+                    || uri.startsWith("/swagger-ui")
+                    || uri.startsWith("/v3/api-docs")
+            )) {
+                String jwt = parseJwt(request);
+                if (jwt == null || jwt.isEmpty()) {
+                    throw new IllegalArgumentException("JWT String argument cannot be null or empty.");
+                } else if (!jwtUtils.validateJwtToken(jwt)) {
+                    throw new IllegalArgumentException("JWT token is invalid");
+                }
+                String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                String userId = jwtUtils.getUserIDFromJwtToken(jwt);
+                request.setAttribute("userId", userId);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            }
         } catch (NoSuchElementException e) {
             logger.error("User not found: " + e.getMessage());
-
             String responseJsonString = this.gson.toJson(new BaseResponse<>(false, "User not found."));
             PrintWriter out = response.getWriter();
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -64,6 +71,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             response.setCharacterEncoding("UTF-8");
             out.print(responseJsonString);
             out.flush();
+            return;
         } catch (Exception e) {
             String errorResponse = "Cannot set user authentication: " + e.getMessage();
             logger.error(errorResponse);
