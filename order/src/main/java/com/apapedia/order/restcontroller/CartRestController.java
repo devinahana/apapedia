@@ -9,6 +9,14 @@ import com.apapedia.order.model.Cart;
 import com.apapedia.order.restservice.CartRestService;
 import com.apapedia.order.utils.ResponseUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import org.springframework.security.core.AuthenticationException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -16,6 +24,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -27,7 +37,12 @@ public class CartRestController {
 
     ResponseUtils responseUtils;
 
-    // POST : Create new cart
+    @Operation(summary = "Create Cart", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCart.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"User ID cannot be empty\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to create cart for this user\"}"))),
+    })
     @PostMapping("")
     public ResponseEntity<?> createCart(
             @Valid @RequestBody CreateCartRequestDTO createCartRequestDTO,
@@ -55,7 +70,12 @@ public class CartRestController {
         }
     }
 
-    // POST : Add cart item
+    @Operation(summary = "Add Cart Item", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCart.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Quantity cannot be less than 1\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to add cart item for this user\"}"))),
+    })
     @PostMapping("/add-item")
     public ResponseEntity<?> addCartItem(@Valid @RequestBody CreateCartItemRequestDTO createCartItemRequestDTO,
             BindingResult bindingResult,
@@ -81,7 +101,13 @@ public class CartRestController {
         }
     }
 
-    // PUT : Update cart item quantity
+    @Operation(summary = "Update Cart Item Quantity", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCart.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Quantity cannot be less than 1\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to update cart item for this user\"}"))),
+            @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cart item not found\"}")))
+    })
     @PutMapping("/update-item")
     public ResponseEntity<?> updateCartItem(
             @Valid @RequestBody UpdateCartItemRequestDTO updateCartItemRequestDTO,
@@ -96,6 +122,10 @@ public class CartRestController {
             return ResponseEntity.ok(new BaseResponse<>(true, "Cart item updated successfully", cart));
         } catch (AuthenticationException e) {
             return responseUtils.getForbiddenResponse("update cart item for this user");
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new BaseResponse<>(false, e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -107,7 +137,12 @@ public class CartRestController {
         }
     }
 
-    // GET Cart by User ID
+    @Operation(summary = "Get Cart by User ID", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCart.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid customer ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to fetch cart for this user\"}"))),
+    })
     @GetMapping("/{userId}")
     public ResponseEntity<?> getCartByUserId(
             @PathVariable String userId,
@@ -137,7 +172,13 @@ public class CartRestController {
         }
     }
 
-    // DELETE : Delete Cart Item
+    @Operation(summary = "Delete Cart Item", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCart.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cart ID cannot be empty\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to delete cart item for this user\"}"))),
+            @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cart item not found\"}")))
+    })
     @DeleteMapping("/delete-item")
     public ResponseEntity<?> deleteCartItem(
             @Valid @RequestBody DeleteCartItemRequestDTO deleteCartItemRequestDTO,
@@ -156,6 +197,10 @@ public class CartRestController {
             return ResponseEntity.ok(new BaseResponse<>(true, message, cart));
         } catch (AuthenticationException e) {
             return responseUtils.getForbiddenResponse("delete cart item for this user");
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new BaseResponse<>(false, e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -166,4 +211,7 @@ public class CartRestController {
                     .body(new BaseResponse<>(false, "Failed deleting cart item : " + e.getMessage()));
         }
     }
+}
+
+class BaseResponseCart extends BaseResponse<Cart> {
 }

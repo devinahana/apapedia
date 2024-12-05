@@ -7,6 +7,13 @@ import com.apapedia.order.model.Order;
 import com.apapedia.order.restservice.OrderRestService;
 import com.apapedia.order.utils.ResponseUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +23,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -26,7 +34,12 @@ public class OrderRestController {
 
     ResponseUtils responseUtils;
 
-    // POST : Create new order
+    @Operation(summary = "Create Order", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrder.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"List of order items cannot be empty\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}")))
+    })
     @PostMapping("")
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody CreateOrderRequestDTO createOrderRequestDTO,
@@ -54,7 +67,13 @@ public class OrderRestController {
         }
     }
 
-    // PUT : Change order status
+    @Operation(summary = "Change Order Status", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrder.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Status must be in the range 0-5\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"User ID does not match\"}"))),
+            @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Order ID not found\"}")))
+    })
     @PutMapping("/change-status")
     public ResponseEntity<?> changeOrderStatus(
             @Valid @RequestBody ChangeOrderStatusRequestDTO changeOrderStatusRequestDTO,
@@ -69,6 +88,10 @@ public class OrderRestController {
             return ResponseEntity.ok(new BaseResponse<>(true, "Order status changed successfully", order));
         } catch (AuthenticationException e) {
             return responseUtils.getForbiddenResponse("change order status for this user");
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new BaseResponse<>(false, e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
@@ -80,7 +103,12 @@ public class OrderRestController {
         }
     }
 
-    // GET Order by Customer Id
+    @Operation(summary = "Get Order by Customer Id", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrderList.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid customer ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to fetch order for this user\"}")))
+    })
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<?> getOrderByCustomerId(
             @PathVariable String customerId,
@@ -108,7 +136,12 @@ public class OrderRestController {
         }
     }
 
-    // GET Order by Seller Id
+    @Operation(summary = "Get Order by Seller Id", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the SELLER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrderList.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid seller ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to fetch order for this user\"}")))
+    })
     @GetMapping("/seller/{sellerId}")
     public ResponseEntity<?> getOrderBySellerId(
             @PathVariable String sellerId,
@@ -136,7 +169,12 @@ public class OrderRestController {
         }
     }
 
-    // GET sales per day for this month
+    @Operation(summary = "GET Sales Per Day for This Month", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the CUSTOMER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrderList.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid customer ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to fetch monthly sales for this user\"}")))
+    })
     @GetMapping("/monthly-sales/{sellerId}")
     public ResponseEntity<?> getSalesPerDay(
             @PathVariable String sellerId,
@@ -164,5 +202,10 @@ public class OrderRestController {
         }
 
     }
+}
 
+class BaseResponseOrder extends BaseResponse<Order> {
+}
+
+class BaseResponseOrderList extends BaseResponse<List<Order>> {
 }

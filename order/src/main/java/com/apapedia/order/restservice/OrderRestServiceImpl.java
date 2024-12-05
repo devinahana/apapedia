@@ -14,6 +14,7 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -45,7 +46,7 @@ public class OrderRestServiceImpl implements OrderRestService {
             order.setStatus(changeOrderStatusRequestDTO.getStatus());
             return this.saveOrder(order);
         } else {
-            throw new IllegalArgumentException("Order ID not found");
+            throw new NoSuchElementException("Order ID not found");
         }
     }
 

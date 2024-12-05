@@ -15,6 +15,7 @@ import org.springframework.security.core.AuthenticationException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -82,7 +83,7 @@ public class CartRestServiceImpl implements CartRestService {
         UUID cartId = updateCartItemRequestDTO.getCartId();
         Cart cart = this.findCartById(cartId);
         if (cart == null) {
-            throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
+            throw new NoSuchElementException("Cart with ID " + cartId + " not found.");
         } else if (!cart.getUserId().toString().equals(tokenUserId)){
             throw new AuthenticationException("User ID does not match") {};
         }
@@ -90,7 +91,7 @@ public class CartRestServiceImpl implements CartRestService {
         UUID cartItemId = updateCartItemRequestDTO.getCartItemId();
         CartItem cartItem = this.findCartItemById(cartItemId);
         if (cartItem == null || ! cart.getListCartItem().contains(cartItem)) {
-            throw new IllegalArgumentException("Cart Item with ID " + cartItemId + " not found.");
+            throw new NoSuchElementException("Cart Item with ID " + cartItemId + " not found.");
         }
 
         BigDecimal totalPriceItem = cartItem.getProductPrice().multiply(
@@ -124,7 +125,7 @@ public class CartRestServiceImpl implements CartRestService {
         UUID cartId = deleteCartItemRequestDTO.getCartId();
         Cart cart = this.findCartById(cartId);
         if (cart == null) {
-            throw new IllegalArgumentException("Cart with ID " + cartId + " not found.");
+            throw new NoSuchElementException("Cart with ID " + cartId + " not found.");
         } else if (!cart.getUserId().toString().equals(tokenUserId)){
             throw new AuthenticationException("User ID does not match") {};
         }
@@ -132,7 +133,7 @@ public class CartRestServiceImpl implements CartRestService {
         UUID cartItemId = deleteCartItemRequestDTO.getCartItemId();
         CartItem cartItem = this.findCartItemById(cartItemId);
         if (cartItem == null || ! cart.getListCartItem().contains(cartItem)) {
-            throw new IllegalArgumentException("Cart Item with ID " + cartItemId + " not found.");
+            throw new NoSuchElementException("Cart Item with ID " + cartItemId + " not found.");
         }
 
         BigDecimal totalPriceDeletedItem = cartItem.getProductPrice().multiply(
