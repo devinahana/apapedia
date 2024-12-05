@@ -13,6 +13,8 @@ import com.apapedia.user.repository.UserDb;
 import com.apapedia.user.security.jwt.JwtUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.github.cdimascio.dotenv.Dotenv;
 import lombok.AllArgsConstructor;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +35,15 @@ public class UserServiceImpl implements UserService {
     private JwtUtils jwtUtils;
 
     private PasswordEncoder passwordEncoder;
+
+    private String loadOrderServiceUrl() {
+        try {
+            Dotenv dotenv = Dotenv.configure().load();
+            return dotenv.get("ORDER_SERVICE_URL");
+        } catch (Exception e) {
+            return System.getenv("ORDER_SERVICE_URL");
+        }
+    }
 
     private UserModel findById(UUID id) {
         UserModel user = userDb.findByIdAndIsDeletedFalse(id);
@@ -69,7 +80,7 @@ public class UserServiceImpl implements UserService {
             Map<String, Object> requestBody = Map.of("userId", customer.getId().toString());
 
             WebClient orderService = WebClient.builder()
-                    .baseUrl("http://localhost:8083")
+                    .baseUrl(loadOrderServiceUrl())
                     .build();
             String response = orderService
                     .post()
