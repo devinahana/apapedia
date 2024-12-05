@@ -128,7 +128,7 @@ public class UserServiceImpl implements UserService {
         UserModel user = userDb.findByUsernameIgnoreCaseAndIsDeletedFalse(username);
 
         if (user == null) {
-            throw new IllegalArgumentException("Username not found");
+            throw new NoSuchElementException("Username not found");
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
