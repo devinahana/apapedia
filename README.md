@@ -1,17 +1,19 @@
 # APAPEDIA Backend
-This repository contains the API backend built for the APAPEDIA e-commerce website. It was developed as part of the final project for the Enterprise Application Programming course. The website is constructed using a **microservices** architecture, consisting of three primary services, Catalog, Order, and User Service. **Checkout the API Documentation** [here](https://docs.google.com/document/d/1e9xxnH1Q4f0g-abZNKhmCT4V_m9AtI61WhrVTsU6mXc/edit?usp=sharing)
+This repository contains the API backend built for the APAPEDIA e-commerce website. It was developed as part of the final project for the Enterprise Application Programming course. The website is constructed using a **microservice** architecture, consisting of three primary services, Catalog, Order, and User Service. Checkout the API Documentation [here](https://docs.google.com/document/d/1e9xxnH1Q4f0g-abZNKhmCT4V_m9AtI61WhrVTsU6mXc/edit?usp=sharing)
 ![image](backend-architecture.png)
 
 ## Services
 1. **Catalog Service**<br>
 The Catalog Service is responsible for storing and managing all data related to the products sold on the e-commerce platform. This includes product details such as name, description, price, inventory levels, and categories.
+[Swagger Documentation](http://localhost:8082/swagger-ui/index.html)
 
 2. **Order Service**<br>
 The Order Service handles all aspects of order management within the e-commerce platform. This includes managing the shopping cart for each user and processing orders once a purchase decision has been made.
+[Swagger Documentation](http://localhost:8083/swagger-ui/index.html)
 
 3. **User Service**<br>
 The User Service is responsible for authenticating users on the APAPEDIA platform. It manages user information for both sellers and customers, and utilizes JWT tokens for authentication.
-
+[Swagger Documentation](http://localhost:8081/swagger-ui/index.html)
 
 ## Tech Stack
 <p>

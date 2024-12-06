@@ -1,10 +1,18 @@
 package com.apapedia.catalog.restcontroller;
 
-import com.apapedia.catalog.dto.Response.BaseResponse;
+import com.apapedia.catalog.dto.response.BaseResponse;
 import com.apapedia.catalog.dto.request.CreateCatalogRequestDTO;
 import com.apapedia.catalog.dto.request.UpdateCatalogRequestDTO;
 import com.apapedia.catalog.model.Catalog;
 import com.apapedia.catalog.restservice.CatalogRestService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,26 +31,30 @@ import java.util.UUID;
 public class CatalogRestController {
     CatalogRestService catalogService;
 
+    @Operation(summary = "Create Catalog", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the SELLER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Error uploading image\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+    })
     @PostMapping("")
     public ResponseEntity<?> createCatalog(
-            @RequestParam UUID seller,
             @RequestParam String productName,
             @RequestParam BigDecimal price,
             @RequestParam String productDescription,
             @RequestParam Integer stock,
             @RequestParam Long categoryId,
-            @RequestParam MultipartFile image
-    ) {
+            @RequestParam MultipartFile image,
+            @RequestAttribute("userId") String seller) {
         try {
             CreateCatalogRequestDTO catalogDTO = new CreateCatalogRequestDTO(
-                    seller,
+                    UUID.fromString(seller),
                     productName,
                     price,
                     productDescription,
                     stock,
                     categoryId,
-                    image
-            );
+                    image);
 
             Catalog catalog = catalogService.createCatalog(catalogDTO);
             return ResponseEntity
@@ -63,6 +75,12 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Get All Catalog", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid seller ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+    })
     @GetMapping("/all")
     public ResponseEntity<?> getAllCatalog(@RequestParam(required = false) String sellerId) {
         try {
@@ -87,6 +105,14 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Update Catalog", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the SELLER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Stock cannot be less than 0\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+            @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to update this catalog\"}"))),
+            @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Catalog not found\"}")))
+    })
     @PutMapping("/{catalogId}")
     public ResponseEntity<?> updateCatalogDetail(
             @PathVariable String catalogId,
@@ -95,11 +121,14 @@ public class CatalogRestController {
             @RequestParam(required = false) BigDecimal price,
             @RequestParam(required = false) Integer stock,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) MultipartFile image
-    ) {
+            @RequestParam(required = false) MultipartFile image,
+            @RequestAttribute("userId") String seller) {
         try {
             UUID catalogIdUUID = UUID.fromString(catalogId);
             Catalog catalog = catalogService.findById(catalogIdUUID);
+            if (!catalog.getSeller().equals(UUID.fromString(seller))) {
+                return getForbiddenResponse("update this catalog");
+            }
 
             UpdateCatalogRequestDTO catalogDTO = new UpdateCatalogRequestDTO(
                     productName,
@@ -107,8 +136,7 @@ public class CatalogRestController {
                     price,
                     stock,
                     categoryId,
-                    image
-            );
+                    image);
             Catalog updatedCatalog = catalogService.updateCatalog(catalog, catalogDTO);
             return ResponseEntity.ok(new BaseResponse<>(true, "Catalog detail updated successfully", updatedCatalog));
         } catch (IllegalArgumentException e) {
@@ -130,6 +158,13 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Get Catalog by ID", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid catalog ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+            @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Catalog not found\"}")))
+    })
     @GetMapping("/{catalogId}")
     public ResponseEntity<?> getCatalogDetail(@PathVariable String catalogId) {
         try {
@@ -151,6 +186,13 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Delete Catalog by ID", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the SELLER role.", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid catalog ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+            @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Catalog not found\"}")))
+    })
     @DeleteMapping("/{catalogId}")
     public ResponseEntity<?> deleteCatalogById(@PathVariable String catalogId) {
         try {
@@ -173,6 +215,11 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Get Catalog by Name", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+    })
     @GetMapping("/name")
     public ResponseEntity<?> getCatalogByName(@RequestParam String q) {
         try {
@@ -185,6 +232,11 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Get Catalog by Price Range", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+    })
     @GetMapping("/price")
     public ResponseEntity<?> getCatalogByPrice(
             @RequestParam(required = false) BigDecimal minPrice,
@@ -217,11 +269,16 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Get Catalog Sort by Price", description = "Default sort ASC", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+    })
     @GetMapping("/sort-price")
     public ResponseEntity<?> getSortedPriceCatalog(@RequestParam(required = false) Boolean isAscending) {
         try {
             List<Catalog> listCatalog = new ArrayList<>();
-            if (isAscending == null  || isAscending) {
+            if (isAscending == null || isAscending) {
                 listCatalog = catalogService.sortByPrice(true);
             } else {
                 listCatalog = catalogService.sortByPrice(false);
@@ -234,11 +291,16 @@ public class CatalogRestController {
         }
     }
 
+    @Operation(summary = "Get Catalog Sort by Name", description = "Default sort ASC", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+    })
     @GetMapping("/sort-name")
     public ResponseEntity<?> getSortedNameCatalog(@RequestParam(required = false) Boolean isAscending) {
         try {
             List<Catalog> listCatalog = new ArrayList<>();
-            if (isAscending == null  || isAscending) {
+            if (isAscending == null || isAscending) {
                 listCatalog = catalogService.sortByName(true);
             } else {
                 listCatalog = catalogService.sortByName(false);
@@ -250,4 +312,16 @@ public class CatalogRestController {
                     .body(new BaseResponse<>(false, "Failed fetching catalog : " + e.getMessage()));
         }
     }
+
+    private ResponseEntity<?> getForbiddenResponse(String action) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new BaseResponse<>(false, "You are not allowed to " + action));
+    }
+}
+
+class BaseResponseCatalog extends BaseResponse<Catalog> {
+}
+
+class BaseResponseCatalogList extends BaseResponse<List<Catalog>> {
 }

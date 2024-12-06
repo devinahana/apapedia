@@ -13,6 +13,8 @@ import com.apapedia.user.repository.UserDb;
 import com.apapedia.user.security.jwt.JwtUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.github.cdimascio.dotenv.Dotenv;
 import lombok.AllArgsConstructor;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,8 +23,6 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import static com.apapedia.user.model.enumerator.Role.CUSTOMER;
-import static com.apapedia.user.model.enumerator.Role.SELLER;
 
 @Service
 @AllArgsConstructor
@@ -35,6 +35,15 @@ public class UserServiceImpl implements UserService {
     private JwtUtils jwtUtils;
 
     private PasswordEncoder passwordEncoder;
+
+    private String loadOrderServiceUrl() {
+        try {
+            Dotenv dotenv = Dotenv.configure().load();
+            return dotenv.get("ORDER_SERVICE_URL");
+        } catch (Exception e) {
+            return System.getenv("ORDER_SERVICE_URL");
+        }
+    }
 
     private UserModel findById(UUID id) {
         UserModel user = userDb.findByIdAndIsDeletedFalse(id);
@@ -60,14 +69,18 @@ public class UserServiceImpl implements UserService {
         return passwordEncoder.encode(Password);
     }
 
-    private UUID getCartId(UUID userId) {
+    private UUID getCartId(CustomerModel customer) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("Content-Type", "application/json");
-            Map<String, Object> requestBody = Map.of("userId", userId.toString());
+
+            String token = jwtUtils.generateJwtToken(customer.getId().toString(), customer.getUsername(),
+                    customer.getRole().toString());
+            headers.set("Authorization", "Bearer " + token);
+            Map<String, Object> requestBody = Map.of("userId", customer.getId().toString());
 
             WebClient orderService = WebClient.builder()
-                    .baseUrl("http://localhost:8083")
+                    .baseUrl(loadOrderServiceUrl())
                     .build();
             String response = orderService
                     .post()
@@ -106,7 +119,7 @@ public class UserServiceImpl implements UserService {
         switch (createUserRequestDTO.getRole()) {
             case CUSTOMER:
                 CustomerModel customer = userMapper.createUserRequestDTOToCustomerModel(createUserRequestDTO);
-                customer.setCart(this.getCartId(customer.getId()));
+                customer.setCart(this.getCartId(customer));
                 return this.saveUser(customer);
             case SELLER:
                 if (createUserRequestDTO.getCategory() == null) {
@@ -126,7 +139,7 @@ public class UserServiceImpl implements UserService {
         UserModel user = userDb.findByUsernameIgnoreCaseAndIsDeletedFalse(username);
 
         if (user == null) {
-            throw new IllegalArgumentException("Username not found");
+            throw new NoSuchElementException("Username not found");
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -135,8 +148,7 @@ public class UserServiceImpl implements UserService {
 
         return new LoginResponseDTO(
                 jwtUtils.generateJwtToken(user.getId().toString(), username, user.getRole().toString()),
-                user
-        );
+                user);
     }
 
     @Override
@@ -155,12 +167,10 @@ public class UserServiceImpl implements UserService {
             user.setBalance(updateBalanceRequestDTO.getAmount());
         } else if (updateBalanceRequestDTO.getPositive()) {
             user.setBalance(
-                    user.getBalance().add(updateBalanceRequestDTO.getAmount())
-            );
+                    user.getBalance().add(updateBalanceRequestDTO.getAmount()));
         } else {
             user.setBalance(
-                    user.getBalance().subtract(updateBalanceRequestDTO.getAmount())
-            );
+                    user.getBalance().subtract(updateBalanceRequestDTO.getAmount()));
         }
 
         return this.saveUser(user);
@@ -199,7 +209,3 @@ public class UserServiceImpl implements UserService {
     }
 
 }
-
-
-
-

@@ -1,9 +1,17 @@
 package com.apapedia.catalog.restcontroller;
 
-import com.apapedia.catalog.dto.Response.BaseResponse;
+import com.apapedia.catalog.dto.response.BaseResponse;
 import com.apapedia.catalog.model.Catalog;
 import com.apapedia.catalog.model.Category;
 import com.apapedia.catalog.restservice.CategoryRestService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +28,23 @@ import java.util.NoSuchElementException;
 public class CategoryRestController {
     CategoryRestService categoryService;
 
+    @Operation(summary = "Get All Category", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCategoryList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+    })
     @GetMapping("")
     public ResponseEntity<?> getAllCategory() {
         List<Category> listCategory = categoryService.getAllCategory();
         return ResponseEntity.ok(new BaseResponse<>(true, "Category fetched successfully", listCategory));
     }
 
+    @Operation(summary = "Get Catalog List by Category", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
+            @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Category not found\"}")))
+    })
     @GetMapping("/catalog/{categoryId}")
     public ResponseEntity<?> getListCatalog(@PathVariable Long categoryId) {
         try {
@@ -42,4 +61,7 @@ public class CategoryRestController {
 
         }
     }
+}
+
+class BaseResponseCategoryList extends BaseResponse<List<Category>> {
 }
