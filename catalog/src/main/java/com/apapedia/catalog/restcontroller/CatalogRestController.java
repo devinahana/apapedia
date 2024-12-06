@@ -34,7 +34,8 @@ public class CatalogRestController {
     @Operation(summary = "Create Catalog", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the SELLER role.", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Error uploading image\"}")))
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Error uploading image\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
     })
     @PostMapping("")
     public ResponseEntity<?> createCatalog(
@@ -77,7 +78,8 @@ public class CatalogRestController {
     @Operation(summary = "Get All Catalog", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid seller ID format. It should be a valid UUID.\"}")))
+            @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid seller ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
     })
     @GetMapping("/all")
     public ResponseEntity<?> getAllCatalog(@RequestParam(required = false) String sellerId) {
@@ -107,6 +109,7 @@ public class CatalogRestController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Stock cannot be less than 0\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to update this catalog\"}"))),
             @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Catalog not found\"}")))
     })
@@ -159,6 +162,7 @@ public class CatalogRestController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid catalog ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Catalog not found\"}")))
     })
     @GetMapping("/{catalogId}")
@@ -186,6 +190,7 @@ public class CatalogRestController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalog.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid catalog ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Catalog not found\"}")))
     })
     @DeleteMapping("/{catalogId}")
@@ -212,7 +217,8 @@ public class CatalogRestController {
 
     @Operation(summary = "Get Catalog by Name", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class)))
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
     })
     @GetMapping("/name")
     public ResponseEntity<?> getCatalogByName(@RequestParam String q) {
@@ -228,7 +234,8 @@ public class CatalogRestController {
 
     @Operation(summary = "Get Catalog by Price Range", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class)))
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
     })
     @GetMapping("/price")
     public ResponseEntity<?> getCatalogByPrice(
@@ -264,7 +271,8 @@ public class CatalogRestController {
 
     @Operation(summary = "Get Catalog Sort by Price", description = "Default sort ASC", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class)))
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
     })
     @GetMapping("/sort-price")
     public ResponseEntity<?> getSortedPriceCatalog(@RequestParam(required = false) Boolean isAscending) {
@@ -285,7 +293,8 @@ public class CatalogRestController {
 
     @Operation(summary = "Get Catalog Sort by Name", description = "Default sort ASC", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class)))
+            @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
     })
     @GetMapping("/sort-name")
     public ResponseEntity<?> getSortedNameCatalog(@RequestParam(required = false) Boolean isAscending) {

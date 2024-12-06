@@ -71,6 +71,7 @@ public class OrderRestController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrder.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Status must be in the range 0-5\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"User ID does not match\"}"))),
             @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Order ID not found\"}")))
     })
@@ -107,6 +108,7 @@ public class OrderRestController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrderList.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid customer ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to fetch order for this user\"}")))
     })
     @GetMapping("/customer/{customerId}")
@@ -140,6 +142,7 @@ public class OrderRestController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrderList.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid seller ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to fetch order for this user\"}")))
     })
     @GetMapping("/seller/{sellerId}")
@@ -169,10 +172,11 @@ public class OrderRestController {
         }
     }
 
-    @Operation(summary = "GET Sales Per Day for This Month", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the SELLER role.", required = true, schema = @Schema(type = "string")))
+    @Operation(summary = "Get Sales Per Day for This Month", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication. Token is accepted only from the SELLER role.", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseOrderList.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Invalid customer ID format. It should be a valid UUID.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "403", description = "Invalid JWT Token", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"You are not allowed to fetch monthly sales for this user\"}")))
     })
     @GetMapping("/monthly-sales/{sellerId}")

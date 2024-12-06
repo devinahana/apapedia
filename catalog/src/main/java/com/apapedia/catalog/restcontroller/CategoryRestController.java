@@ -31,6 +31,7 @@ public class CategoryRestController {
     @Operation(summary = "Get All Category", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCategoryList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
     })
     @GetMapping("")
     public ResponseEntity<?> getAllCategory() {
@@ -38,9 +39,10 @@ public class CategoryRestController {
         return ResponseEntity.ok(new BaseResponse<>(true, "Category fetched successfully", listCategory));
     }
 
-    @Operation(summary = "Get List Catalog by Category", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
+    @Operation(summary = "Get Catalog List by Category", parameters = @Parameter(in = ParameterIn.HEADER, name = "Authorization", description = "Bearer token for authentication", required = true, schema = @Schema(type = "string")))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful Response", content = @Content(mediaType = "application/json", schema = @Schema(implementation = BaseResponseCatalogList.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Cannot set user authentication: JWT String argument cannot be null or empty.\"}"))),
             @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(mediaType = "application/json", schema = @Schema(example = "{\"isSuccess\": false, \"message\": \"Category not found\"}")))
     })
     @GetMapping("/catalog/{categoryId}")
