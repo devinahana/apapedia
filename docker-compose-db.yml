@@ -14,5 +14,5 @@ volumes:
     driver: local
 networks:
   backend-network:
-    name: db_backend-network
+    name: db-backend-network
     driver: bridge
