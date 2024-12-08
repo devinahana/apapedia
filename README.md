@@ -4,15 +4,15 @@ This repository contains the API backend built for the APAPEDIA e-commerce websi
 
 ## Services
 1. **Catalog Service**<br>
-The Catalog Service is responsible for storing and managing all data related to the products sold on the e-commerce platform. This includes product details such as name, description, price, inventory levels, and categories.
+The Catalog Service is responsible for storing and managing all data related to the products sold on the e-commerce platform. This includes product details such as name, description, price, inventory levels, and categories.<br>
 [Swagger Documentation](http://localhost:8082/swagger-ui/index.html)
 
 2. **Order Service**<br>
-The Order Service handles all aspects of order management within the e-commerce platform. This includes managing the shopping cart for each user and processing orders once a purchase decision has been made.
+The Order Service handles all aspects of order management within the e-commerce platform. This includes managing the shopping cart for each user and processing orders once a purchase decision has been made.<br>
 [Swagger Documentation](http://localhost:8083/swagger-ui/index.html)
 
 3. **User Service**<br>
-The User Service is responsible for authenticating users on the APAPEDIA platform. It manages user information for both sellers and customers, and utilizes JWT tokens for authentication.
+The User Service is responsible for authenticating users on the APAPEDIA platform. It manages user information for both sellers and customers, and utilizes JWT tokens for authentication.<br>
 [Swagger Documentation](http://localhost:8081/swagger-ui/index.html)
 
 ## Tech Stack
